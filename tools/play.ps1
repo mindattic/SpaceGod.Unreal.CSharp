@@ -6,15 +6,15 @@ param(
   # This repo is the C# track alone (US-T69); -Track stays so older command lines keep working.
   [ValidateSet('CSharp')][string]$Track = 'CSharp',
   [string]$EngineVersion = '5.8',
-  # -Mode coop-smoke only (US-T64): run a packaged game's exe (tools/package.ps1's folder, e.g. Builds/Cpp/Windows, Development or
+  # -Mode coop-smoke only (US-T64): run a packaged game's exe (tools/package.ps1's folder, e.g. Builds/CSharp/Windows, Development or
   # Shipping) instead of the editor binaries.
   [string]$PackageDir = ''
 )
 
 <#
 .SYNOPSIS
-Run Unreal.SpaceGod in game mode from the editor binaries: solo, as the co-op host, or joining a host.
--Track picks the C++ port (Cpp/) or the C# port (CSharp/; build it first with tools/build.ps1 -Track CSharp).
+Run SpaceGod.Unreal.CSharp in game mode from the editor binaries: solo, as the co-op host, or joining a host.
+Build it first with tools/build.ps1. (-Track CSharp is the only track here; the C++ port is SpaceGod.Unreal.Cpp.)
 -Mode smoke runs headless (-nullrhi): the UI tour (every screen, clicking the real buttons) and the app loop with a
 scripted keyboard and mouse (warp key, camera move, selection, save/load round trip), logged under LogSpaceGod, then
 quits; the log is <Track>/Saved/Logs/<project>.log. Both tracks log the same lines, so the two can be compared.
@@ -26,18 +26,13 @@ quits; the log is <Track>/Saved/Logs/<project>.log. Both tracks log the same lin
   ./tools/play.ps1 -Mode join -Address 192.168.1.20
   ./tools/play.ps1 -Track CSharp
   ./tools/play.ps1 -Track CSharp -Mode smoke
-  ./tools/play.ps1 -Track Cpp -Mode smoke      # the C++ track's same smoke (US-T38)
-  ./tools/play.ps1 -Track Cpp -Mode shots      # docs/images/cpp-ui-*.png
   ./tools/play.ps1 -Track CSharp -Mode shots   # windowed: the UI's screenshots into docs/images
   ./tools/play.ps1 -Track CSharp -Mode views   # headless: Sol's views (US-T27) built for a frame, counts logged
   ./tools/play.ps1 -Track CSharp -Mode demo     # windowed: the -demo scene tour, every stop captured (US-T40)
-  ./tools/play.ps1 -Track Cpp -Mode demo        # the C++ track's same tour (US-T58)
   ./tools/play.ps1 -Track CSharp -Mode viewshot # windowed: those views on screen, docs/images/csharp-views-sol.png
   ./tools/play.ps1 -Track CSharp -Mode host      # co-op (US-T39): a listen server, player 1
   ./tools/play.ps1 -Track CSharp -Mode join -Address 192.168.1.20
   ./tools/play.ps1 -Track CSharp -Mode coop-smoke # headless: a host and a client on localhost, their digests compared
-  ./tools/play.ps1 -Track Cpp -Mode coop-smoke    # the C++ track's same co-op smoke (US-T44)
-  ./tools/play.ps1 -Track Cpp -Mode coop-smoke -PackageDir Builds/Cpp/Windows # the same from a package, Shipping too (US-T64)
   ./tools/play.ps1 -Track CSharp -Mode coop-smoke -PackageDir Builds/CSharp/Windows # the C# track's from a package (US-T67)
   ./tools/play.ps1 -Track CSharp -Mode audit     # headless: the smoke, then a probe per binding, PASS/FAIL each (US-T48)
 #>

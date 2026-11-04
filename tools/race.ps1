@@ -24,7 +24,6 @@ The script waits for a quiet machine (no compiler, UE build or other UE game run
 else was running, and the time from launching the exe to the process ending.
 
 .EXAMPLE
-  ./tools/race.ps1 -Track Cpp -Runs 3
   ./tools/race.ps1 -Track CSharp -Runs 3 -Out Builds/Race/game
 #>
 
