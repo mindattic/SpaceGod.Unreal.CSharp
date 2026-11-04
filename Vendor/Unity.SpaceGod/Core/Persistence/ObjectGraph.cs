@@ -316,6 +316,13 @@ namespace Unity.SpaceGod.Core
                                      .OrderBy(f => f.Name, StringComparer.Ordinal))
                         {
                             if (f.IsLiteral) continue;
+                            // A ConditionalWeakTable cache (FlightDecks.decks, ArmourAngling.Tables) is keyed by live
+                            // simulation objects, not static data: walking it named live battle units, ships, factions
+                            // and worlds by cache paths that differ in every process, so a save made once the caches
+                            // held anything could not be loaded by a fresh process. The walk leaves those caches out
+                            // (found by the Unreal ports, Unreal.SpaceGod US-T41, docs/PERSISTENCE.md there; docs/PARITY.md).
+                            if (f.FieldType.IsGenericType &&
+                                f.FieldType.GetGenericTypeDefinition() == typeof(System.Runtime.CompilerServices.ConditionalWeakTable<,>)) continue;
                             object v;
                             try { v = f.GetValue(null); }
                             catch { continue; }

@@ -6,7 +6,7 @@ the originals.
 
 | Folder | Source | Commit | Compiled by |
 |---|---|---|---|
-| `Unity.SpaceGod/Core/` | [Unity.SpaceGod](https://github.com/mindattic/Unity.SpaceGod) `Assets/UnitySpace/Core/**/*.cs` (184 files; the `.meta` files are left out) | `45dc06b` (includes the U.SPC-T602 gone-escort fix) | `CSharp/Core/SpaceGod.Core` (the game) and `Bench/CSharp/Lib/SpaceGod.Core` (the Bench), assembly `Unity.SpaceGod.Core` |
+| `Unity.SpaceGod/Core/` | [Unity.SpaceGod](https://github.com/mindattic/Unity.SpaceGod) `Assets/UnitySpace/Core/**/*.cs` (184 files; the `.meta` files are left out) | `45dc06b` (includes the U.SPC-T602 gone-escort fix); `Persistence/ObjectGraph.cs` since US-T70 from SpaceGod.Unity.CSharp `1f6af6d` (its static-object walk skips the ConditionalWeakTable caches, the US-T41 fix in Core itself), so this folder is byte-identical to that copy's `Assets/UnitySpace/Core` | `CSharp/Core/SpaceGod.Core` (the game) and `Bench/CSharp/Lib/SpaceGod.Core` (the Bench), assembly `Unity.SpaceGod.Core` |
 | `Unity.Shared/Core/` | [Unity.Shared](https://github.com/mindattic/Unity.Shared) `unity/com.mindattic.unity.shared/Runtime/Core/**/*.cs` (8 files) | `3ce3b8a` | `CSharp/Core/Unity.Shared.Core` and `Bench/CSharp/Lib/Unity.Shared.Core`, assembly `Unity.Shared.Core` |
 
 The UnrealSharp plugin (`CSharp/Plugins/UnrealSharp/`) was a git submodule of
