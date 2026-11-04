@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-  [ValidateSet('Cpp', 'CSharp')][string]$Track = 'Cpp',
+  # This repo is the C# track alone (US-T69); -Track stays so older command lines keep working.
+  [ValidateSet('CSharp')][string]$Track = 'CSharp',
   # How many runs (each a fresh process); the write-up takes medians.
   [int]$Runs = 3,
   # Where the results go: <Out>/<track>-<n>.json.

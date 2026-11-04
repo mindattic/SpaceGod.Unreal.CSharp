@@ -1,6 +1,7 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
-  [ValidateSet('Cpp', 'CSharp')][string]$Track = 'Cpp',
+  # This repo is the C# track alone (US-T69); -Track stays so older command lines keep working.
+  [ValidateSet('CSharp')][string]$Track = 'CSharp',
   [ValidateSet('Development', 'DebugGame', 'Shipping')][string]$Configuration = 'Development',
   [int]$MaxParallelActions = 4,
   [string]$EngineVersion = '5.8'
@@ -12,7 +13,7 @@ Build a track's editor target with UnrealBuildTool (no editor needed). Close any
 first: UBT refuses while Live Coding is active. MaxParallelActions is kept low so the build leaves memory free;
 -WaitMutex queues this build behind any other UE build running on the machine.
 
-The CSharp track also: fetches the UnrealSharp submodule if missing, works around UnrealSharp's net8.0/net10.0
+This repo is the C# track alone. The build also: checks the vendored UnrealSharp plugin is there, works around UnrealSharp's net8.0/net10.0
 detection on installed (launcher) engines, and after the C++ build compiles the managed side (UnrealSharp's
 own bindings, then Script/ + Unity.SpaceGod's Core) with UnrealSharp's UAT command, as the editor would.
 #>
@@ -27,9 +28,9 @@ $build = Join-Path $engine 'Engine\Build\BatchFiles\Build.bat'
 
 if ($Track -eq 'CSharp') {
   $plugin = Join-Path $project.DirectoryName 'Plugins\UnrealSharp'
+  # The plugin is vendored as plain files (Vendor/README.md), no submodule to fetch.
   if (-not (Test-Path -LiteralPath (Join-Path $plugin 'UnrealSharp.uplugin'))) {
-    git -C $repo submodule update --init -- CSharp/Plugins/UnrealSharp
-    if ($LASTEXITCODE) { throw 'Could not fetch the UnrealSharp submodule.' }
+    throw "The vendored UnrealSharp plugin is missing ($plugin); restore it with git checkout -- CSharp/Plugins/UnrealSharp."
   }
   # UnrealSharp.Automation.props picks net10.0 (what UE 5.8's UBT/UAT need) only when it finds
   # UE_5_8_OR_LATER in Engine/Intermediate/Build/BuildRulesProjects/UE5Rules/UE5Rules.csproj, which only a
@@ -38,7 +39,7 @@ if ($Track -eq 'CSharp') {
   # gitignored "<project>.csproj.props" first, so define the symbol there.
   $hook = @'
 <Project>
-  <!-- Written by tools/build.ps1 (Unreal.SpaceGod): this project targets UE 5.8, see UnrealSharp PR #717. -->
+  <!-- Written by tools/build.ps1 (SpaceGod.Unreal.CSharp): this project targets UE 5.8, see UnrealSharp PR #717. -->
   <PropertyGroup>
     <UE5Rules_DefineConstants>UE_5_8_OR_LATER</UE5Rules_DefineConstants>
   </PropertyGroup>

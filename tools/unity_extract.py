@@ -1,11 +1,14 @@
-"""Reads Unity's own built-ins out of Unity.SpaceGod's built player, so both tracks reproduce them exactly (US-T57).
+"""Reads Unity's own built-ins out of Unity.SpaceGod's built player, so the game reproduces them exactly (US-T57).
+
+OPTIONAL, one-time importer: its output (BuiltinSkin.cs, and the constants in spacegod_render_materials.py) is
+committed, so nothing in the build runs it or needs a Unity player. Only rerun it to re-extract.
 
     python -m pip install UnityPy          (once; any recent version)
-    python tools/unity_extract.py [<player>/Unity.SpaceGod_Data]   (default: ../Unity.SpaceGod/Builds/Windows/...)
+    python tools/unity_extract.py <player>/Unity.SpaceGod_Data   (default: a Unity.SpaceGod player built next to this repo)
 
 Writes:
-  * CSharp/Script/ManagedUnrealSpaceGodCSharp/UnityCompat/Imgui/BuiltinSkin.cs and
-    Cpp/Source/UnrealSpaceGod/UnityCompat/UnityBuiltinSkin.inl: Unity's runtime default skin (GUI.skin, the
+  * CSharp/Script/ManagedUnrealSpaceGodCSharp/UnityCompat/Imgui/BuiltinSkin.cs (and, only where a Cpp/ tree exists,
+    Cpp/Source/UnrealSpaceGod/UnityCompat/UnityBuiltinSkin.inl): Unity's runtime default skin (GUI.skin, the
     "GameSkin" in Resources/unity default resources): every style's states (background texture, text colour),
     border, margin, padding, overflow, alignment, wrapping, clipping, image position, offsets, fixed sizes, and the
     skin's textures pixel for pixel (RGBA, bilinear, sRGB, as Unity keeps them).
@@ -378,7 +381,9 @@ def lighting(roughness=0.9):
 if __name__ == "__main__":
     skin, textures = load_skin()
     write_cs(skin, textures)
-    write_cpp(skin, textures)
     print("wrote", CS_OUT)
-    print("wrote", CPP_OUT)
+    # This repo is the C# track alone (US-T69): the C++ skin is written only where a Cpp/ tree exists.
+    if os.path.isdir(os.path.dirname(CPP_OUT)):
+        write_cpp(skin, textures)
+        print("wrote", CPP_OUT)
     lighting()

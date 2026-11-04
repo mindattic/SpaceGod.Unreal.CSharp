@@ -3,7 +3,8 @@ param(
   [ValidateSet('solo', 'host', 'join', 'smoke', 'shots', 'views', 'viewshot', 'demo', 'fidelity', 'coop-smoke', 'audit')][string]$Mode = 'solo',
   [string]$CaptureDir = '',
   [string]$Address = '127.0.0.1',
-  [ValidateSet('Cpp', 'CSharp')][string]$Track = 'Cpp',
+  # This repo is the C# track alone (US-T69); -Track stays so older command lines keep working.
+  [ValidateSet('CSharp')][string]$Track = 'CSharp',
   [string]$EngineVersion = '5.8',
   # -Mode coop-smoke only (US-T64): run a packaged game's exe (tools/package.ps1's folder, e.g. Builds/Cpp/Windows, Development or
   # Shipping) instead of the editor binaries.

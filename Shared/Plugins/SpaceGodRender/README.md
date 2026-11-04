@@ -14,8 +14,8 @@ pixels. US-T24.
 | `Content/Python/spacegod_render_verify.py` | compiles every material in an offscreen editor and logs any shader error |
 
 ```
-UnrealEditor-Cmd Cpp/UnrealSpaceGod.uproject -run=pythonscript -script=<abs>/Shared/Plugins/SpaceGodRender/Content/Python/spacegod_render_materials.py -unattended
-UnrealEditor-Cmd Cpp/UnrealSpaceGod.uproject -ExecutePythonScript=<abs>/.../spacegod_render_verify.py -RenderOffscreen -unattended
+UnrealEditor-Cmd CSharp/UnrealSpaceGodCSharp.uproject -run=pythonscript -script=<abs>/Shared/Plugins/SpaceGodRender/Content/Python/spacegod_render_materials.py -unattended
+UnrealEditor-Cmd CSharp/UnrealSpaceGodCSharp.uproject -ExecutePythonScript=<abs>/.../spacegod_render_verify.py -RenderOffscreen -unattended
 ```
 
 Use a material through a `UMaterialInstanceDynamic` and set parameters **by the Unity name** (`SetScalarParameterValue("_Haze", …)`,

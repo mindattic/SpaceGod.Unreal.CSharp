@@ -3,7 +3,7 @@
 A commandlet cannot render, so it never compiles material shaders: run this in the (offscreen) editor instead.
 MaterialEditingLibrary.get_statistics forces each material to finish compiling, any Custom-node / .ush error is
 logged ("Failed to compile Material ..."), and the editor quits when done:
-    UnrealEditor-Cmd.exe Cpp/UnrealSpaceGod.uproject -ExecutePythonScript=".../spacegod_render_verify.py"
+    UnrealEditor-Cmd.exe CSharp/UnrealSpaceGodCSharp.uproject -ExecutePythonScript=".../spacegod_render_verify.py"
         -RenderOffscreen -unattended -nop4 -nosplash
 """
 

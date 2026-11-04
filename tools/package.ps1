@@ -1,6 +1,7 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
-  [ValidateSet('Cpp', 'CSharp')][string]$Track = 'Cpp',
+  # This repo is the C# track alone (US-T69); -Track stays so older command lines keep working.
+  [ValidateSet('CSharp')][string]$Track = 'CSharp',
   [ValidateSet('Development', 'Shipping')][string]$Configuration = 'Development',
   [int]$MaxParallelActions = 4,
   [string]$EngineVersion = '5.8',

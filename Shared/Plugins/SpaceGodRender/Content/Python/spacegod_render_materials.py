@@ -6,7 +6,7 @@ becomes a material parameter of the same name (_Color, _MainTex, ...); Unity's s
 _SunColor, ...) become the Material Parameter Collection MPC_SpaceGod. See ../../README.md for the full mapping.
 
 Run headless (from the repo root; any project that enables the plugin works):
-    UnrealEditor-Cmd.exe Cpp/UnrealSpaceGod.uproject -run=pythonscript
+    UnrealEditor-Cmd.exe CSharp/UnrealSpaceGodCSharp.uproject -run=pythonscript
         -script="<repo>/Shared/Plugins/SpaceGodRender/Content/Python/spacegod_render_materials.py"
         -unattended -nop4 -nosplash -NullRHI
 It rebuilds every material graph and the collection in place (the assets keep their paths and references), so rerun

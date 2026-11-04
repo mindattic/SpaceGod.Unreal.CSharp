@@ -1,5 +1,7 @@
 # Unity.SpaceGod → Unreal.SpaceGod migration
 
+> **SpaceGod.Unreal.CSharp (US-T69):** this write-up dates from Unreal.SpaceGod, which held both tracks. This repo keeps the C# track alone; the C++ track (`Cpp/`, `Bench/Cpp`) is in SpaceGod.Unreal.Cpp. Where it says the Core is compiled in place from `../Unity.SpaceGod` and `../Unity.Shared`, or that UnrealSharp is a submodule, read `Vendor/` and plain files instead (`Vendor/README.md`).
+
 Goal (US-T4): a **perfect replica of Unity.SpaceGod in Unreal Engine 5.8, built twice** — once in native C++,
 once in C# — both **co-op**, then raced against each other to see whether either has a real advantage.
 

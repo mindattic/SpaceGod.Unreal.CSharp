@@ -1,6 +1,0 @@
-<Project>
-  <!-- Keep obj/ out of the source tree (Cpp/Intermediate is gitignored). -->
-  <PropertyGroup>
-    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\..\Intermediate\CsParityDotNet\obj\</BaseIntermediateOutputPath>
-  </PropertyGroup>
-</Project>

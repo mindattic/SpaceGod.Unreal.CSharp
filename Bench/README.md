@@ -1,12 +1,13 @@
 # Bench
 
-Headless runners over the two simulation Cores, driven by the same scenarios with the same seed, so the C++ port
-(`Cpp/Source/SpaceGodCore`) can be checked **bit for bit** against Unity.SpaceGod's own C# Core and the two raced.
+A headless runner over the simulation Core, driven by fixed scenarios with a fixed seed, whose digests prove the game
+is the same game on every SpaceGod track: the Unity original, the Unreal C++ port and this C# track all produce the
+digests recorded in `expected-digests.json`, and `tools/bench.ps1` checks every run against them. (The C++ runner,
+`Bench/Cpp`, lives on in SpaceGod.Unreal.Cpp; the sections below on comparing the two are history.)
 
-| Runner | Status | Core |
-|---|---|---|
-| `Bench/CSharp/` (`Bench.CSharp.exe`, .NET 10 and .NET 8) | done (US-T23; net10.0, the C# game track's runtime, added in US-T42) | `../Unity.SpaceGod/Assets/UnitySpace/Core/**/*.cs` + `../Unity.Shared/.../Runtime/Core`, linked **in place** by `CSharp/Lib/*.csproj` (netstandard2.1, C# 9, as Unity.SpaceGod's `Tests/UnitySpace.Core` does). Nothing is copied. `UnitySpaceGodDir` / `UnitySharedDir` override the checkouts. |
-| `Bench/Cpp/` (`Bench.Cpp.exe`) | done (US-T37) | `Cpp/Source/SpaceGodCore` (the standalone `SpaceGodCore.lib` from `tools/build-core.ps1`); `src/` is a line-for-line port of `CSharp/src` (Program, Simulation, Digest), built by `tools/build-bench-cpp.ps1` into `Cpp/Intermediate/CoreStandalone/Release/Bench.Cpp.exe` |
+| Runner | Core |
+|---|---|
+| `Bench/CSharp/` (`Bench.CSharp.exe`, .NET 10 and .NET 8) | `Vendor/Unity.SpaceGod/Core` + `Vendor/Unity.Shared/Core` (this repo's copies, see `Vendor/README.md`), compiled by `CSharp/Lib/*.csproj` (netstandard2.1, C# 9, as Unity.SpaceGod's `Tests/UnitySpace.Core` does) |
 
 ```powershell
 tools/bench.ps1                         # dotnet build -c Release, then every scenario, one process each (~2 min)

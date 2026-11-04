@@ -1,78 +1,88 @@
-# Unreal.SpaceGod
+# SpaceGod – Unreal C# (SpaceGod.Unreal.CSharp)
 
-The real Sol system in Unreal Engine 5, played co-op: the Unreal counterpart of
-[Unity.SpaceGod](https://github.com/mindattic/Unity.SpaceGod). The planets, dwarf planets, moons and
-asteroids sit where they really are for today's date, placed from JPL orbital elements, and you and
-your friends fly around them together on one shared clock.
+> **Archival candidate.** One of three self-contained copies of the same game (US-T69):
+> [SpaceGod.Unity.CSharp](https://github.com/mindattic/SpaceGod.Unity.CSharp) (the Unity original),
+> [SpaceGod.Unreal.Cpp](https://github.com/mindattic/SpaceGod.Unreal.Cpp) (Unreal, C++) and this one (Unreal, C# through
+> UnrealSharp). One will be promoted to work in progress and the other two archived; the race that compared the
+> Unreal tracks is in [docs/RACE.md](docs/RACE.md).
 
-> **Migration in progress (US-T4):** the full game is being ported twice, to C++ (`Cpp/`) and C# (`CSharp/`), co-op, then benchmarked against each other. See [docs/MIGRATION.md](docs/MIGRATION.md).
+The real Sol system in Unreal Engine 5, played co-op: Unity.SpaceGod's own C# simulation Core running inside Unreal
+through [UnrealSharp](https://github.com/UnrealSharp/UnrealSharp). The planets, dwarf planets, moons and asteroids sit
+where they really are for today's date, placed from JPL orbital elements, and you and your friends fly around them
+together on one shared clock.
 
-## What is ported
+This repo was split out of [Unreal.SpaceGod](https://github.com/mindattic/Unreal.SpaceGod) (whose history it keeps) and
+holds the C# track alone. It is **self-contained**: a fresh clone needs no sibling repos and no submodules.
 
-C++ track: the whole simulation Core is translated file for file into `Cpp/Source/SpaceGodCore/` (rules in
-[docs/MIGRATION.md](docs/MIGRATION.md)), and Unity.SpaceGod's `Runtime/` layer (UnitySpaceApp and its partials,
-the camera rig, input with the original bindings, settings, profiles, launch) into `Cpp/Source/UnrealSpaceGod/`,
-mirroring `Runtime/`'s layout. Views, UI and Rendering follow in their own tickets.
+| What | Where | Came from |
+|---|---|---|
+| The simulation Core (unchanged) | `Vendor/Unity.SpaceGod/Core/` | Unity.SpaceGod `Assets/UnitySpace/Core` at `45dc06b` |
+| Unity.Shared's Core (profiles, settings.json) | `Vendor/Unity.Shared/Core/` | Unity.Shared `unity/com.mindattic.unity.shared/Runtime/Core` at `3ce3b8a` |
+| The UnrealSharp plugin | `CSharp/Plugins/UnrealSharp/` (plain files) | UnrealSharp `115e6753` (was a submodule) |
+| The ported shaders and materials | `Shared/Plugins/SpaceGodRender/` | this repo |
 
-The NASA/USGS colour maps and their sources are in `Cpp/SourceArt/Textures/` (see its `SOURCES.md`).
+Details in [Vendor/README.md](Vendor/README.md).
+
+## Needs
+
+- Unreal Engine 5.8 (found by `tools/engine.ps1`: the registry, the launcher's list, `D:\Games\UE_5.8` and the other
+  usual folders, or set `UE_ROOT`).
+- Visual Studio 2022 with the "Game development with C++" workload (UnrealSharp's glue and the small C++ module).
+- A .NET 10 SDK: `tools/dotnet-sdk.ps1` installs a private one under `CSharp/Intermediate/DotNet` when the machine's
+  cannot build UnrealSharp.
+
+## Deploy and play
+
+```powershell
+./run.ps1 -Launch          # pull, package Shipping, publish to C:\Apps\SpaceGod.Unreal.CSharp\, refresh the shortcut, play
+./run.ps1 -Force -Launch   # the same even when nothing changed
+./run.ps1 -LauncherOnly    # only (re)create the Desktop shortcut
+```
+
+`run.ps1` never prompts. The Desktop shortcut **SpaceGod – Unreal C#** opens `deploy.bat`, which asks
+1) Deploy & Run or 2) Run (Run deploys first when nothing is published yet).
+
+## Building and running from the checkout
+
+```powershell
+./tools/build.ps1                                   # editor target + UnrealSharp glue + Script/ + the Core
+./tools/play.ps1 -Mode smoke                        # headless: build the Galaxy, step it, log Earth's position, quit
+./tools/play.ps1                                    # game window
+./tools/play.ps1 -Mode host                         # co-op: a listen server on UDP 7777
+./tools/play.ps1 -Mode join -Address 192.168.1.20   # join a host
+./tools/play.ps1 -Mode coop-smoke                   # headless: a host and a client on localhost, digests compared
+./tools/package.ps1 -Configuration Shipping         # Builds/CSharp/Windows/Unreal.SpaceGod.CSharp.exe
+./tools/play.ps1 -Mode coop-smoke -PackageDir Builds/CSharp/Windows   # the co-op smoke from a package
+./tools/bench.ps1                                   # the headless Bench; checks the five recorded digests
+```
+
+`-Track CSharp` is still accepted by the tools (the only track here). In game, `Host` in the `` ` `` console turns a
+solo session into a hosted one, and `open <ip>` joins one.
 
 ## Co-op
 
-One player hosts a listen server and the others join it. The server owns the simulation clock (the
-date, the time warp and pause), so everyone sees the planets in the same places; any player can
-change the time, and everyone is told who did. Each player flies their own camera and sees the
-others as green markers labelled with the body they are near. The scale switch, orbits and labels
-are your own and don't affect anyone else.
-
-A camera is shared as a frame body plus a true offset in km, so a teammate in REALISTIC scale and
-you in GAMEPLAY scale still agree on where they are.
-
-## Running it
-
-Needs Unreal Engine 5.8 with Visual Studio 2022 (the "Game development with C++" workload).
-
-1. Right-click `Cpp/UnrealSpaceGod.uproject` (or run `tools/build.ps1`) and pick **Generate Visual Studio project files**, then open
-   the project. The editor offers to build the module.
-2. On first open, `Cpp/Content/Python/init_unreal.py` (or headless: `setup_assets.py`) imports the maps into
-   `/Game/UnrealSpaceGod/Textures` and builds the `M_Body` and `M_Ring` materials. Commit what it
-   creates under `Cpp/Content/UnrealSpaceGod/`. Until it has run, bodies are drawn flat-lit.
-3. Press Play. To try co-op in the editor, set **Play > Net Mode** to *Play As Listen Server* with 2
-   or more players.
-
-Outside the editor, `tools/play.ps1` starts a game window:
-
-```powershell
-./tools/play.ps1 -Mode host                         # host on UDP 7777
-./tools/play.ps1 -Mode join -Address 192.168.1.20   # join a host
-```
-
-In game, `Host` in the `` ` `` console turns a solo session into a hosted one, and `open <ip>` joins one.
-
-### The C# track (`CSharp/`)
-
-Unity.SpaceGod's own C# Core running inside Unreal through [UnrealSharp](https://github.com/UnrealSharp/UnrealSharp)
-(why, and the build details: [docs/MIGRATION.md](docs/MIGRATION.md#c-track)). Needs Unity.SpaceGod and Unity.Shared
-cloned next to this repo; the Core is compiled from there, not copied.
-
-```powershell
-git submodule update --init                   # the UnrealSharp plugin (build.ps1 does this too)
-./tools/build.ps1 -Track CSharp               # C++ (plugin) + C# glue + Script/ + the Core; installs a private .NET SDK if the machine's can't build UnrealSharp
-./tools/play.ps1 -Track CSharp -Mode smoke    # headless: build the Galaxy, step it, log Earth's position, quit
-./tools/play.ps1 -Track CSharp                # game window (engine side still to come)
-```
+One player hosts a listen server and the others join it. The server owns the simulation clock (the date, the time warp
+and pause), so everyone sees the planets in the same places; any player can change the time, and everyone is told who
+did. Each player flies their own camera and sees the others as markers. A camera is shared as a frame body plus a true
+offset in km, so players in different scale modes still agree on where they are.
 
 ## Controls
 
-Unity.SpaceGod's own bindings, unchanged (its Core `ControlsHelp` and `Runtime/Input/InputState.cs`; in game,
-H / F1 shows them all).
+Unity.SpaceGod's own bindings, unchanged (H / F1 in game shows them all).
 
 ## Layout
 
-- `Cpp/Source/SpaceGodCore/`: the engine-independent simulation (pure C++20 on `Cs/Cs.h`, no Unreal types).
-- `Cpp/Source/UnrealSpaceGod/`: the Runtime port. `UnitySpaceApp` (+ one `.cpp` per C# partial) drives the Core
-  each frame; `Camera/` (SpaceCamera, StarTravel), `Input/` (InputState + the Unreal device feed), `UnityCompat/`
-  (Unity's value types and statics in C++), `UnrealSpace.h` (the one Unity -> Unreal axes/units conversion).
-  `AUnitySpaceAppActor` hosts the app; `Game/` holds the Unreal framework classes (game mode, the GameState that
-  mirrors the host's clock for co-op, the player controller, the HUD that runs OnGUI).
-- The game needs no level: it plays on the engine's empty `/Engine/Maps/Entry` and builds everything
-  at runtime (`?Scene=MainMenu` or `?Scene=UnitySpace` picks Unity's scene).
+- `CSharp/UnrealSpaceGodCSharp.uproject`: the UE 5.8 project (plugins UnrealSharp and SpaceGodRender).
+- `CSharp/Script/ManagedUnrealSpaceGodCSharp/`: the game's managed code, Unity.SpaceGod's `Runtime/` on UnrealSharp
+  (`Runtime/`, `UnityCompat/`: Unity's API over Unreal).
+- `CSharp/Core/`: the csprojs that compile the vendored Core (`SpaceGod.Core`, `Unity.Shared.Core`) and `SaveCompat/`.
+- `CSharp/Source/UnrealSpaceGodCSharp/`: the small C++ module (audio, GUI overlay).
+- `Shared/Plugins/SpaceGodRender/`: Unity.SpaceGod's shaders ported to Unreal, with their materials.
+- `Bench/`: the headless Bench over the Core (`Bench/README.md`); `Bench/expected-digests.json` holds the digests every
+  SpaceGod track produces.
+- `tools/`: build, package, play, race, bench. `tools/unity_extract.py` is an optional one-time importer from a built
+  Unity player; its output is committed.
+- `docs/`: the migration, faithfulness, persistence and race write-ups (written while the repo held both tracks; the
+  C++ track now lives in SpaceGod.Unreal.Cpp).
+
+The game needs no level: it plays on the engine's empty `/Engine/Maps/Entry` and builds everything at runtime.

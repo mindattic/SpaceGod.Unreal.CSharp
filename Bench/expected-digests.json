@@ -1,0 +1,10 @@
+{
+  "note": "Each Bench scenario's digest hash, identical on every SpaceGod track (Unity.SpaceGod's own Core, the Unreal C++ port and the Unreal C# track), recorded at Unreal.SpaceGod 1f2c7b0 / Unity.SpaceGod 45dc06b (US-T59, US-T60). tools/bench.ps1 checks every run against these.",
+  "digests": {
+    "sol-idle": "B30509691F52C9E0",
+    "high-warp": "A8A790EC13FD23C8",
+    "economy-year": "7F6533416B74D14D",
+    "battle": "ABD80179E1D7F1AC",
+    "galaxy-ftl": "F1E614170D1B1960"
+  }
+}
