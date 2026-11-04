@@ -44,14 +44,14 @@ $title     = 'SpaceGod – Unreal C#'
 $out       = "C:\Apps\$name"
 $exeName   = 'Unreal.SpaceGod.CSharp.exe'          # tools\package.ps1's launcher name
 $buildDir  = Join-Path $repoDir 'Builds\CSharp\Windows'
-$deployBat = Join-Path $repoDir 'deploy.bat'
+$shortcutBat = Join-Path $repoDir 'run.bat'   # the Desktop shortcut's target: deploy, then run (US-T71)
 $marker    = Join-Path $out '.deploy-commit'
 
 # GetFolderPath, not $HOME\Desktop: OneDrive may have moved the Desktop folder.
 function Set-Shortcut([string]$exe) {
     $shortcut = Join-Path ([Environment]::GetFolderPath('Desktop')) "$title.lnk"
     $link = (New-Object -ComObject WScript.Shell).CreateShortcut($shortcut)
-    $link.TargetPath       = $deployBat
+    $link.TargetPath       = $shortcutBat
     $link.WorkingDirectory = $repoDir
     if (Test-Path -LiteralPath $exe) { $link.IconLocation = "$exe,0" }
     $link.Description      = "$title ($name): 1) Deploy & Run or 2) Run"
