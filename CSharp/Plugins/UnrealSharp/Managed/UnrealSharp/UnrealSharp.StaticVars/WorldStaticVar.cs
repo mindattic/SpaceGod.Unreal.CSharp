@@ -1,0 +1,76 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
+using UnrealSharp.Core;
+using UnrealSharp.Core.Interop;
+using UnrealSharp.Interop;
+
+namespace UnrealSharp.StaticVars;
+
+/// <summary>
+/// A static variable that has the lifetime of a UWorld. When the world is destroyed, the value is destroyed.
+/// For example when traveling between levels, the value is destroyed.
+/// </summary>
+public sealed class FWorldStaticVar<T> : FBaseStaticVar<T>
+{
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private readonly Dictionary<IntPtr, T> _worldToValue = new Dictionary<IntPtr, T>();
+    
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private readonly FDelegateHandle _onWorldCleanupHandle;
+
+    private readonly FWorldDelegates.FWorldCleanupEvent _onWorldCleanupDelegate;
+
+    public FWorldStaticVar()
+    {
+        _onWorldCleanupDelegate = OnWorldCleanup;
+        IntPtr onWorldCleanup = Marshal.GetFunctionPointerForDelegate(_onWorldCleanupDelegate);
+        Bind_FWorldDelegates.CallBindOnWorldCleanup(onWorldCleanup, out _onWorldCleanupHandle);
+    }
+    
+    public FWorldStaticVar(T value) : this()
+    {
+        Value = value;
+    }
+    
+    ~FWorldStaticVar()
+    {
+        Bind_FWorldDelegates.CallUnbindOnWorldCleanup(_onWorldCleanupHandle);
+    }
+    
+    public override T? Value
+    {
+        get => GetWorldValue();
+        set => SetWorldValue(value!);
+    }
+    
+    private T? GetWorldValue()
+    {
+        IntPtr worldPtr = Bind_UCSManager.CallGetCurrentWorldPtr();
+        return _worldToValue.GetValueOrDefault(worldPtr);
+    }
+    
+    private void SetWorldValue(T value)
+    {
+        IntPtr worldPtr = Bind_UCSManager.CallGetCurrentWorldPtr();
+        if (_worldToValue.TryAdd(worldPtr, value))
+        {
+            return;
+        }
+        
+        _worldToValue[worldPtr] = value;
+    }
+    
+    private void OnWorldCleanup(IntPtr world, NativeBool sessionEnded, NativeBool cleanupResources)
+    {
+        _worldToValue.Remove(world);
+    }
+
+#if WITH_EDITOR
+    protected override void OnAlcUnloading(AssemblyLoadContext alc)
+    {
+        base.OnAlcUnloading(alc);
+        Bind_FWorldDelegates.CallUnbindOnWorldCleanup(_onWorldCleanupHandle);
+    }
+#endif
+}

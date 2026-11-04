@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Unity.Shared's engine-free Unity.Shared.Core (player profiles, settings.json), compiled from the package's own
-       source in place, as Unity.SpaceGod's Tests/Unity.Shared.Core does (netstandard2.1, C# 9). Nothing is copied.
-       Set UnitySharedDir when the Unity.Shared checkout is not next to this repo. -->
+  <!-- Unity.Shared's engine-free Unity.Shared.Core (player profiles, settings.json): Runtime/Core of the package at
+       Unity.Shared 3ce3b8a, compiled from this repo's own copy in Vendor/Unity.Shared/Core (see Vendor/README.md),
+       as Unity.SpaceGod's Tests/Unity.Shared.Core does (.NET Standard 2.1, C# 9). -->
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>9.0</LangVersion>
@@ -11,12 +11,9 @@
     <RootNamespace>Unity.Shared.Core</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IsPackable>false</IsPackable>
-    <UnitySharedDir Condition="'$(UnitySharedDir)' == ''">$(MSBuildThisFileDirectory)../../../../../Unity.Shared/</UnitySharedDir>
+    <VendorCoreDir>$(MSBuildThisFileDirectory)../../../../Vendor/Unity.Shared/Core/</VendorCoreDir>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(UnitySharedDir)unity/com.mindattic.unity.shared/Runtime/Core/**/*.cs" LinkBase="Core" />
+    <Compile Include="$(VendorCoreDir)**/*.cs" LinkBase="Core" />
   </ItemGroup>
-  <Target Name="RequireUnityShared" BeforeTargets="CoreCompile" Condition="!Exists('$(UnitySharedDir)unity/com.mindattic.unity.shared/package.json')">
-    <Error Text="The Unity.Shared repo was not found at $(UnitySharedDir). Clone it next to Unreal.SpaceGod, or set UnitySharedDir to its folder." />
-  </Target>
 </Project>

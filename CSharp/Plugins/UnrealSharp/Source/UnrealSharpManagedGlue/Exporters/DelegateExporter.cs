@@ -1,0 +1,69 @@
+﻿using EpicGames.Core;
+using EpicGames.UHT.Types;
+using UnrealSharpManagedGlue.PropertyTranslators;
+using UnrealSharpManagedGlue.SourceGeneration;
+using UnrealSharpManagedGlue.Utilities;
+
+namespace UnrealSharpManagedGlue.Exporters;
+
+public static class DelegateExporter
+{
+    public static void ExportDelegate(UhtFunction function)
+    {
+        string delegateName = DelegateBasePropertyTranslator.GetDelegateName(function);
+        
+        GeneratorStringBuilder stringBuilder = new();
+        
+        stringBuilder.StartGlueFile(function);
+        stringBuilder.AppendLine();
+        
+        string superClass;
+        if (function.HasAllFlags(EFunctionFlags.MulticastDelegate))
+        {
+            superClass = $"MulticastDelegate<{delegateName}>";
+        }
+        else
+        {
+            superClass = $"Delegate<{delegateName}>";
+        }
+        
+        FunctionExporter functionExporter = FunctionExporter.ExportDelegateSignature(stringBuilder, function, delegateName);
+        string wrapperName = DelegateBasePropertyTranslator.GetWrapperName(function);
+        
+        stringBuilder.DeclareType(function, "class", wrapperName, superClass);
+        
+        FunctionExporter.ExportDelegateGlue(stringBuilder, functionExporter, delegateName);
+        
+        stringBuilder.AppendLine($"static {wrapperName}()");
+        stringBuilder.OpenBrace();
+        ExportDelegateFunctionStaticConstruction(stringBuilder, function);
+        stringBuilder.CloseBrace();
+        
+        stringBuilder.CloseBrace();
+        
+        FunctionExporter.ExportDelegateExtensions(stringBuilder, functionExporter, superClass);
+
+        stringBuilder.EndGlueFile(function);
+        FileExporter.SaveGlueToDisk(function.Package, function.Package.GetPackageOutputDirectory(), delegateName, stringBuilder.ToString());
+    }
+
+    private static void ExportDelegateFunctionStaticConstruction(GeneratorStringBuilder builder, UhtFunction function)
+    {
+        string delegateName = function.SourceName;
+        string moduleName = function.Package.EngineName;
+        string outerName = function.Outer is UhtField ? $"\"{function.Outer!.EngineName}\"" : "null";
+        
+        builder.AppendLine($"{delegateName}_NativeFunction = {ExporterCallbacks.Bind_CoreUObject}.CallGetNativeDelegate(\"{moduleName}\", {outerName}, \"{function.EngineName}\");");
+        
+        if (function.HasParameters)
+        {
+            builder.AppendLine($"{delegateName}_ParamsSize = {ExporterCallbacks.Bind_UFunction}.CallGetNativeFunctionParamsSize({delegateName}_NativeFunction);");
+        }
+        
+        foreach (UhtProperty parameter in function.Properties)
+        {
+            PropertyTranslator propertyTranslator = parameter.GetTranslator()!;
+            propertyTranslator.ExportParameterStaticConstructor(builder, parameter, function, parameter.SourceName, delegateName);
+        }
+    }
+}

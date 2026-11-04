@@ -1,0 +1,19 @@
+﻿#pragma once
+
+#include "CSManagedTypeCompiler.h"
+#include "CSManagedInterfaceCompiler.generated.h"
+
+class UCSInterface;
+
+UCLASS()
+class UCSManagedInterfaceCompiler : public UCSManagedTypeCompiler
+{
+	GENERATED_BODY()
+public:
+	UCSManagedInterfaceCompiler();
+	
+	// UCSManagedTypeCompiler interface implementation
+	virtual void Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const override;
+	virtual TSharedPtr<FCSTypeReferenceReflectionData> CreateReflectionData() const override;
+	// End of implementation
+};

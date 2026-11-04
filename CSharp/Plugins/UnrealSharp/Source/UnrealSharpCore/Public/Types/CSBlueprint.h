@@ -1,0 +1,11 @@
+﻿#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/Object.h"
+#include "CSBlueprint.generated.h"
+
+UCLASS()
+class UCSBlueprint : public UBlueprint
+{
+	GENERATED_BODY()
+};

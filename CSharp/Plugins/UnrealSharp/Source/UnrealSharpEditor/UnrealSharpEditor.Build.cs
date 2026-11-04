@@ -1,0 +1,54 @@
+﻿using UnrealBuildTool;
+
+public class UnrealSharpEditor : ModuleRules
+{
+    public UnrealSharpEditor(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+
+        PublicDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "Core",
+                "UnrealSharpBinds", 
+                "UnrealSharpCore"
+            }
+        );
+
+        PrivateDependencyModuleNames.AddRange(
+            new string[]
+            {
+                "CoreUObject",
+                "Engine",
+                "Slate",
+                "SlateCore",
+                "EditorSubsystem",
+                "UnrealEd",
+                "UnrealSharpUtilities",
+                "BlueprintGraph",
+                "ToolMenus",
+                "EditorFramework",
+                "InputCore",
+                "AppFramework",
+                "EditorStyle",
+                "Projects",
+                "GameplayTags",
+                "DeveloperSettings",
+                "UnrealSharpAsyncBlueprint",
+                "Kismet",
+                "KismetCompiler",
+                "BlueprintEditorLibrary",
+                "SubobjectDataInterface",
+                "AssetTools",
+                "PluginBrowser", 
+                "UnrealSharpUtilities", 
+                "PlacementMode",
+                "DeveloperToolSettings",
+                "UMG",
+                "ToolWidgets"
+            }
+        );
+
+        PublicDefinitions.Add("ForceAsEngineGlue=1");
+    }
+}

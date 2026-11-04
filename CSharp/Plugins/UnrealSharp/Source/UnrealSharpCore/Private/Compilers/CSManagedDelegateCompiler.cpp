@@ -1,0 +1,32 @@
+﻿#include "Compilers/CSManagedDelegateCompiler.h"
+#include "Factories/CSFunctionFactory.h"
+#include "CSManagedTypeDefinition.h"
+#include "UnrealSharpUtils.h"
+#include "Types/CSDelegateFunction.h"
+
+UCSManagedDelegateCompiler::UCSManagedDelegateCompiler()
+{
+	FieldType = UCSDelegateFunction::StaticClass();
+}
+
+void UCSManagedDelegateCompiler::Compile(UField* TypeToRecompile, const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+{
+	UCSDelegateFunction* DelegateSignature = static_cast<UCSDelegateFunction*>(TypeToRecompile);
+	TSharedPtr<FCSFunctionReflectionData> FunctionReflectionData = ManagedTypeDefinition->GetReflectionData<FCSFunctionReflectionData>();
+	
+	FCSUnrealSharpUtils::PurgeStruct(DelegateSignature);
+	DelegateSignature->ParmsSize = 0;
+	DelegateSignature->ReturnValueOffset = 0;
+	DelegateSignature->NumParms = 0;
+	DelegateSignature->FunctionFlags = FunctionReflectionData->FunctionFlags | FUNC_Public;
+	
+	FCSFunctionFactory::CreateParameters(DelegateSignature, *FunctionReflectionData);
+	DelegateSignature->StaticLink(true);
+	
+	RegisterFieldToLoader(TypeToRecompile, ENotifyRegistrationType::NRT_Struct);
+}
+
+TSharedPtr<FCSTypeReferenceReflectionData> UCSManagedDelegateCompiler::CreateReflectionData() const
+{
+	return MakeShared<FCSFunctionReflectionData>();
+}

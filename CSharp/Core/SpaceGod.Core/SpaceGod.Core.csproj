@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Unity.SpaceGod's engine-free simulation (Assets/UnitySpace/Core/**/*.cs), compiled UNCHANGED and IN PLACE
-       from the Unity.SpaceGod checkout next to this repo, as its own Tests/UnitySpace.Core csproj does
-       (.NET Standard 2.1, C# 9, assembly Unity.SpaceGod.Core). No copy of the Core lives in this repo: the C#
-       track runs the very source the Unity game ships. Set UnitySpaceGodDir (property or environment variable)
-       when the checkout is elsewhere. -->
+  <!-- Unity.SpaceGod's engine-free simulation (Assets/UnitySpace/Core/**/*.cs at Unity.SpaceGod 45dc06b), compiled
+       unchanged from this repo's own copy in Vendor/Unity.SpaceGod/Core (see Vendor/README.md), as Unity.SpaceGod's
+       Tests/UnitySpace.Core csproj does (.NET Standard 2.1, C# 9, assembly Unity.SpaceGod.Core). -->
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>9.0</LangVersion>
@@ -13,15 +11,12 @@
     <RootNamespace>Unity.SpaceGod.Core</RootNamespace>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <IsPackable>false</IsPackable>
-    <UnitySpaceGodDir Condition="'$(UnitySpaceGodDir)' == ''">$(MSBuildThisFileDirectory)../../../../Unity.SpaceGod/</UnitySpaceGodDir>
+    <VendorCoreDir>$(MSBuildThisFileDirectory)../../../Vendor/Unity.SpaceGod/Core/</VendorCoreDir>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(UnitySpaceGodDir)Assets/UnitySpace/Core/**/*.cs" LinkBase="Core" />
+    <Compile Include="$(VendorCoreDir)**/*.cs" LinkBase="Core" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Unity.Shared.Core/Unity.Shared.Core.csproj" />
   </ItemGroup>
-  <Target Name="RequireUnitySpaceGod" BeforeTargets="CoreCompile" Condition="!Exists('$(UnitySpaceGodDir)Assets/UnitySpace/Core/World.cs')">
-    <Error Text="The Unity.SpaceGod repo was not found at $(UnitySpaceGodDir). Clone it next to Unreal.SpaceGod, or set UnitySpaceGodDir to its folder." />
-  </Target>
 </Project>

@@ -1,0 +1,25 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "CSManagedDelegate.h"
+#include "CSManagedGCHandle.h"
+#include "UObject/Object.h"
+#include "CSAsyncActionBase.generated.h"
+
+UCLASS()
+class UCSAsyncActionBase : public UObject
+{
+	GENERATED_BODY()
+public:
+	UFUNCTION(meta = (ScriptMethod))
+	void Destroy();
+	void InitializeManagedCallback(FGCHandleIntPtr Callback);
+protected:
+
+	void InvokeManagedCallback(bool bDispose = true);
+    void InvokeManagedCallback(UObject* WorldContextObject, bool bDispose = true);
+	
+	FCSManagedDelegate ManagedCallback;
+};

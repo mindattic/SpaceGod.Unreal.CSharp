@@ -1,0 +1,322 @@
+﻿#include "CSManagedAssembly.h"
+
+#include "CSManagedPluginCallbacks.h"
+#include "UnrealSharpCore.h"
+#include "Misc/Paths.h"
+#include "CSManager.h"
+#include "Logging/StructuredLog.h"
+#include "ReflectionData/CSEnumReflectionData.h"
+#include "Types/CSEnum.h"
+#include "Compilers/CSManagedDelegateCompiler.h"
+#include "Utilities/CSClassUtilities.h"
+#include "Utilities/CSUtilities.h"
+
+FCSAssemblyEvents::FCSAssemblyEvent FCSAssemblyEvents::OnAssemblyLoaded;
+FCSAssemblyEvents::FCSAssemblyEvent FCSAssemblyEvents::OnAssemblyUnloaded;
+
+void UCSManagedAssembly::Initialize(const FStringView InAssemblyPath, bool bInIsCollectible)
+{
+	if (!AssemblyFilePath.IsEmpty())
+	{
+		return;
+	}
+
+	AssemblyFilePath = FPaths::ConvertRelativePathToFull(InAssemblyPath.GetData());
+
+#if defined(_WIN32)
+	AssemblyFilePath.ReplaceInline(TEXT("/"), TEXT("\\"));
+#endif
+
+	bIsCollectible = bInIsCollectible;
+
+	FOnManagedTypeStructureChanged::FDelegate Delegate = FOnManagedTypeStructureChanged::FDelegate::CreateUObject(
+		this, &UCSManagedAssembly::OnTypeReflectionDataChanged);
+	FCSManagedTypeDefinitionEvents::AddOnReflectionDataChangedDelegate(Delegate);
+}
+
+bool UCSManagedAssembly::LoadAssembly()
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("UCSManagedAssembly::LoadManagedAssembly: ") + GetName()));
+
+	if (IsAssemblyLoaded())
+	{
+		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already loaded", GetName());
+		return true;
+	}
+
+	if (!FPaths::FileExists(AssemblyFilePath))
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Assembly path does not exist: {0}", AssemblyFilePath);
+		return false;
+	}
+
+	bIsLoading = true;
+
+	FGCHandle NewAssemblyGCHandle = GetManagedPluginCallbacks().LoadPlugin(*AssemblyFilePath, bIsCollectible);
+
+	if (NewAssemblyGCHandle.IsNull())
+	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to load assembly: {0}", AssemblyFilePath);
+	}
+
+	AssemblyHandle = MakeShared<FGCHandle>(NewAssemblyGCHandle);
+
+	for (const TSharedPtr<FCSManagedTypeDefinition>& QueuedType : PendingCompilationTypes)
+	{
+		QueuedType->Compile();
+	}
+
+#if WITH_EDITOR
+	PendingCompilationTypes.Reset();
+#else
+	PendingCompilationTypes.Empty();
+#endif
+
+	bIsLoading = false;
+
+	FCSAssemblyEvents::OnAssemblyLoaded.Broadcast(this);
+	return true;
+}
+
+void UCSManagedAssembly::UnloadAssembly()
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FString(TEXT("UCSManagedAssembly::UnloadAssembly: ") + GetName()));
+
+	if (!bIsCollectible)
+	{
+		UE_LOGFMT(LogUnrealSharp, Warning,
+		          "Assembly {0} is not collectible and will not be unloaded. It will be unloaded when the editor shuts down.",
+		          GetName());
+		return;
+	}
+
+	if (!IsAssemblyLoaded())
+	{
+		UE_LOGFMT(LogUnrealSharp, Display, "{0} is already unloaded", GetName());
+		return;
+	}
+
+	FGCHandleIntPtr AssemblyHandlePtr = AssemblyHandle->GetHandle();
+	for (TSharedPtr<FGCHandle> Handle : ManagedHandles)
+	{
+		Handle->Dispose(AssemblyHandlePtr);
+	}
+
+	ManagedTypeHandles.Reset();
+	ManagedHandles.Reset();
+
+	AssemblyHandle->Dispose(AssemblyHandlePtr);
+	AssemblyHandle.Reset();
+
+	GetManagedPluginCallbacks().UnloadPlugin(*AssemblyFilePath);
+
+	FCSAssemblyEvents::OnAssemblyUnloaded.Broadcast(this);
+}
+
+TSharedPtr<FGCHandle> UCSManagedAssembly::FindTypeHandle(const FCSFieldName& FieldName)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::FindTypeHandle);
+
+	if (TSharedPtr<FGCHandle>* ExistingHandle = ManagedTypeHandles.Find(FieldName))
+	{
+		return *ExistingHandle;
+	}
+
+	TStringBuilder<256> FullName;
+	FieldName.AppendFullName(FullName);
+
+	uint8* TypeHandle = GetManagedCallbacks().GetManagedTypeHandle(AssemblyHandle->GetPointer(), *FullName);
+
+	if (!TypeHandle)
+	{
+		return nullptr;
+	}
+
+	UE_LOGFMT(LogUnrealSharp, Verbose, "Resolved managed type handle for '{TypeName}'", FullName.ToString());
+	return AddTypeHandle(FieldName, TypeHandle);
+}
+
+TSharedPtr<FGCHandle> UCSManagedAssembly::AddTypeHandle(const FCSFieldName& FieldName, uint8* TypeHandle)
+{
+	TSharedPtr<FGCHandle> NewTypeHandle = MakeShared<FGCHandle>(TypeHandle);
+	ManagedTypeHandles.Add(FieldName, NewTypeHandle);
+	ManagedHandles.Add(NewTypeHandle);
+	return NewTypeHandle;
+}
+
+TSharedPtr<FGCHandle> UCSManagedAssembly::GetManagedMethod(const TSharedPtr<FGCHandle>& TypeHandle,
+                                                           const FString& MethodName)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::GetManagedMethod);
+	UE_LOGFMT(LogUnrealSharp, Verbose, "Looking up managed method {0}", MethodName);
+
+	if (!TypeHandle.IsValid())
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Type handle is invalid for method {0}", MethodName);
+		return nullptr;
+	}
+
+	uint8* MethodHandle = GetManagedCallbacks().GetManagedMethod(TypeHandle->GetPointer(), *MethodName);
+
+	if (!MethodHandle)
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find managed method for {0}", MethodName);
+		return nullptr;
+	}
+
+	return ManagedHandles.Emplace_GetRef(MakeShared<FGCHandle>(MethodHandle));
+}
+
+TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::FindOrAddManagedTypeDefinition(UClass* Field)
+{
+	if (const ICSManagedTypeInterface* ManagedClass = FCSClassUtilities::GetManagedType(Field))
+	{
+		return ManagedClass->GetManagedTypeDefinition();
+	}
+
+	const FCSFieldName FieldName = FCSFieldName::FromNativeBase(Field);
+	return FindOrAddManagedTypeDefinition(FieldName);
+}
+
+TSharedPtr<FCSManagedTypeDefinition> UCSManagedAssembly::FindOrAddManagedTypeDefinition(const FCSFieldName& FieldName)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSAssembly::FindOrAddManagedTypeDefinition);
+
+	TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition = ManagedTypeRegistry.FindOrAdd(FieldName);
+
+	if (ManagedTypeDefinition.IsValid())
+	{
+		return ManagedTypeDefinition;
+	}
+
+	UField* Field = FCSUtilities::FindField<UField>(FieldName);
+	if (!IsValid(Field))
+	{
+		UE_LOGFMT(LogUnrealSharp, Error, "Failed to find native class: {0}", FieldName.GetSourceName());
+		return nullptr;
+	}
+
+	ManagedTypeDefinition = FCSManagedTypeDefinition::CreateFromNativeField(Field, this);
+	return ManagedTypeDefinition;
+}
+
+void UCSManagedAssembly::RegisterManagedType(TCHAR* InFieldName, const TCHAR* InNamespace, ECSFieldType FieldType, uint8* TypeGCHandle, TCHAR* ReflectionJsonString)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::RegisterManagedType);
+	UE_LOGFMT(LogUnrealSharp, Verbose, "Registering type {0}.{1}", InNamespace, InFieldName);
+
+	const FCSFieldName FieldName(InFieldName, FCSNamespace(InNamespace), GetFName(), FieldType);
+	TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition = ManagedTypeRegistry.FindOrAdd(FieldName);
+	
+#if WITH_EDITOR
+	if (ManagedTypeDefinition.IsValid() && !FCSUtilities::ShouldReloadDefinition(
+		ManagedTypeDefinition.ToSharedRef(), ReflectionJsonString))
+	{
+		ManagedTypeDefinition->SetTypeGCHandle(TypeGCHandle);
+		ManagedTypeDefinition->SetDirtyFlags(None);
+		return;
+	}
+#endif
+
+	UCSManagedTypeCompiler* Compiler = FCSUtilities::ResolveCompilerFromFieldType(FieldType);
+	TSharedPtr<FCSTypeReferenceReflectionData> NewReflectionData = Compiler->CreateReflectionData();
+	NewReflectionData->SerializeFromJsonString(ReflectionJsonString);
+
+	if (ManagedTypeDefinition.IsValid())
+	{
+		ManagedTypeDefinition->SetReflectionData(NewReflectionData);
+	}
+	else
+	{
+		ManagedTypeDefinition = FCSManagedTypeDefinition::CreateFromReflectionData(NewReflectionData, this, Compiler);
+	}
+
+	ManagedTypeDefinition->SetTypeGCHandle(TypeGCHandle);
+}
+
+TSharedPtr<FGCHandle> UCSManagedAssembly::CreateManagedObjectFromNative(const UObject* Object)
+{
+	UClass* Class = FCSClassUtilities::GetFirstNonBlueprintClass(Object->GetClass());
+	TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition = FindOrAddManagedTypeDefinition(Class);
+	return CreateManagedObjectFromNative(Object, ManagedTypeDefinition->GetTypeGCHandle());
+}
+
+TSharedPtr<FGCHandle> UCSManagedAssembly::CreateManagedObjectFromNative(
+	const UObject* Object, const TSharedPtr<FGCHandle>& TypeGCHandle)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::CreateManagedObjectFromNative);
+
+	// The managed type can be missing if it was removed from C# and hot reloaded while the UClass is still alive.
+	if (!TypeGCHandle.IsValid() || TypeGCHandle->IsNull())
+	{
+		UE_LOGFMT(LogUnrealSharp, Warning, "No managed type found for {0}. Was the C# type removed?", Object->GetName());
+		return nullptr;
+	}
+
+	TCHAR* Error = nullptr;
+	FGCHandle NewObjectHandle = GetManagedCallbacks().
+		CreateNewManagedObject(Object, TypeGCHandle->GetPointer(), &Error);
+
+	if (NewObjectHandle.IsNull())
+	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed counterpart for {0}:\n{1}", Object->GetName(),
+		          Error);
+	}
+
+	TSharedPtr<FGCHandle> Handle = MakeShared<FGCHandle>(NewObjectHandle);
+
+	const FCSObjectID ObjectID = Object->GetUniqueID();
+	UCSManager::Get().GetManagedObjectHandles().AddByHash(ObjectID.Get(), ObjectID, Handle);
+	ManagedHandles.Add(Handle);
+	return Handle;
+}
+
+TSharedPtr<FGCHandle> UCSManagedAssembly::GetOrCreateManagedInterface(UObject* Object, UClass* InterfaceClass)
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedAssembly::GetOrCreateManagedInterface);
+
+	UClass* NonBlueprintClass = FCSClassUtilities::GetFirstNonBlueprintClass(InterfaceClass);
+	TSharedPtr<FCSManagedTypeDefinition> ClassInfo = FindOrAddManagedTypeDefinition(NonBlueprintClass);
+	TSharedPtr<FGCHandle> TypeHandle = ClassInfo->GetTypeGCHandle();
+
+	const FCSObjectID ObjectID = Object->GetUniqueID();
+	TMap<FCSObjectID, TSharedPtr<FGCHandle>>& InterfaceWrappersMap = UCSManager::Get().GetManagedInterfaceWrappers().
+		FindOrAddByHash(ObjectID.Get(), ObjectID);
+
+	const uint32 TypeId = InterfaceClass->GetUniqueID();
+	if (TSharedPtr<FGCHandle>* Existing = InterfaceWrappersMap.FindByHash(TypeId, TypeId))
+	{
+		return *Existing;
+	}
+
+	TSharedPtr<FGCHandle>* ObjectHandle = UCSManager::Get().GetManagedObjectHandles().FindByHash(
+		ObjectID.Get(), ObjectID);
+	if (!ObjectHandle)
+	{
+		return nullptr;
+	}
+
+	FGCHandle NewManagedObjectWrapper = GetManagedCallbacks().CreateNewManagedObjectWrapper(
+		(*ObjectHandle)->GetPointer(), TypeHandle->GetPointer());
+
+	if (NewManagedObjectWrapper.IsNull())
+	{
+		UE_LOGFMT(LogUnrealSharp, Fatal, "Failed to create managed counterpart for {0}", Object->GetName());
+	}
+
+	TSharedPtr<FGCHandle> Handle = MakeShared<FGCHandle>(NewManagedObjectWrapper);
+	InterfaceWrappersMap.AddByHash(TypeId, TypeId, Handle);
+	ManagedHandles.Add(Handle);
+
+	return Handle;
+}
+
+void UCSManagedAssembly::OnTypeReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition)
+{
+	if (ManagedTypeDefinition->GetOwningAssembly() != this)
+	{
+		return;
+	}
+
+	PendingCompilationTypes.Add(ManagedTypeDefinition);
+}

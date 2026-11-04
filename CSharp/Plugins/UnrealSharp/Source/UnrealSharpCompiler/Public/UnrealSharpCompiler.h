@@ -1,0 +1,43 @@
+﻿#pragma once
+
+#include "CoreMinimal.h"
+#include "CSBlueprintCompiler.h"
+#include "Modules/ModuleManager.h"
+
+class UCSManagedAssembly;
+struct FCSManagedTypeDefinition;
+class UCSInterface;
+struct FCSReferencesCollection;
+class UCSEnum;
+class UCSScriptStruct;
+class FCSBlueprintCompiler;
+
+DECLARE_LOG_CATEGORY_EXTERN(LogUnrealSharpCompiler, Log, All);
+
+class FUnrealSharpCompilerModule : public IModuleInterface
+{
+public:
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
+private:
+    
+    void OnNewClass(UCSClass* NewClass);
+    void OnNewStruct(UCSScriptStruct* NewStruct);
+    void OnNewEnum(UCSEnum* NewEnum);
+
+    void OnReflectionDataChanged(TSharedPtr<FCSManagedTypeDefinition> ManagedTypeDefinition);
+    
+    void OnManagedAssemblyLoaded(UCSManagedAssembly* Assembly);
+    static bool IsAssemblyHotReloadable(const UCSManagedAssembly* Assembly);
+    void RecompileAndReinstanceBlueprints();
+
+    void AddManagedReferences(FCSReferencesCollection& Collection);
+
+    static void RefreshDependentLoaders(UBlueprint* Blueprint);
+    static void RefreshInstanceTickSettings(const UBlueprint* Blueprint);
+    
+    FCSBlueprintCompiler BlueprintCompiler;
+    
+    TArray<UCSBlueprint*> ManagedClassesToCompile;
+    TArray<UCSBlueprint*> ManagedComponentsToCompile;
+};

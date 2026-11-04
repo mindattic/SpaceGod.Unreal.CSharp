@@ -1,0 +1,68 @@
+﻿#pragma once
+
+#include "CoreMinimal.h"
+#include "Streaming/StreamingWorldSubsystemInterface.h"
+#include "SubsystemCollectionBaseRef.h"
+#include "Extensions/Libraries/CSWorldExtensions.h"
+#include "Subsystems/WorldSubsystem.h"
+#include "CSWorldSubsystem.generated.h"
+
+UCLASS(Blueprintable, BlueprintType, Abstract)
+class UCSWorldSubsystem : public UTickableWorldSubsystem, public IStreamingWorldSubsystemInterface
+{
+	GENERATED_BODY()
+
+	// USubsystem Begin
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
+	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override;
+	virtual void BeginDestroy() override;
+	// End
+
+	// UWorldSubsystem begin
+	virtual void PostInitialize() override;
+	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+	virtual void OnWorldComponentsUpdated(UWorld& World) override;
+	virtual void OnUpdateStreamingState() override
+	{
+        K2_UpdateStreamingState();
+	}
+	virtual TStatId GetStatId() const override;
+	virtual void Tick(float DeltaTime) override;
+	// End
+
+	/** Returns true if Initialize has been called but Deinitialize has not */
+	UFUNCTION(meta = (ScriptMethod))
+	bool GetIsInitialized() const;
+
+protected:
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "PostInitialize"))
+	void K2_PostInitialize();
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Tick"))
+	void K2_Tick(float DeltaTime);
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "OnWorldBeginPlay"))
+	void K2_OnWorldBeginPlay();
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "OnWorldComponentsUpdated"))
+	void K2_OnWorldComponentsUpdated();
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "UpdateStreamingState"))
+	void K2_UpdateStreamingState();
+
+	UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "ShouldCreateSubsystem"))
+	bool K2_ShouldCreateSubsystem(UObject* SubsystemOuter) const;
+
+    UFUNCTION(BlueprintNativeEvent, meta = (ScriptName = "DoesSupportWorldType"))
+    bool K2_DoesSupportWorldType(const ECSWorldType WorldType) const;
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Initialize"))
+	void K2_Initialize(FSubsystemCollectionBaseRef Collection);
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (ScriptName = "Deinitialize"))
+	void K2_Deinitialize();
+
+};

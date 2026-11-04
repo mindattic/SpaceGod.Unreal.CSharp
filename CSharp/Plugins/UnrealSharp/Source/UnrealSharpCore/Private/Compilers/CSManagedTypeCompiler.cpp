@@ -1,0 +1,40 @@
+#include "Compilers/CSManagedTypeCompiler.h"
+#include "CSManagedAssembly.h"
+#include "CSManager.h"
+#include "Utilities/CSMetaDataUtils.h"
+#include "CSManagedTypeDefinition.h"
+
+UField* UCSManagedTypeCompiler::CreateField(const TSharedPtr<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::CreateField);
+	
+	TSharedPtr<const FCSTypeReferenceReflectionData> ReflectionData = ManagedTypeDefinition->GetReflectionData();
+	UPackage* OwningPackage = UCSManager::Get().GetPackage(ReflectionData->FieldName.GetNamespace());
+	FString Name = GetFieldName(ReflectionData);
+
+	UField* NewField = NewObject<UField>(OwningPackage, FieldType, *Name, RF_Public);
+	
+	ICSManagedTypeInterface* ManagedTypeInterface = CastChecked<ICSManagedTypeInterface>(NewField);
+	ManagedTypeInterface->SetManagedTypeDefinition(ManagedTypeDefinition);
+
+	UE_LOGFMT(LogUnrealSharp, VeryVerbose, "Created type: {0} in package: {1}", *Name, *OwningPackage->GetName());
+	return NewField;
+}
+
+void UCSManagedTypeCompiler::StartCompilation(const TSharedRef<FCSManagedTypeDefinition>& ManagedTypeDefinition) const
+{
+	TRACE_CPUPROFILER_EVENT_SCOPE(UCSManagedTypeCompiler::StartCompilation);
+	
+	UField* TypeToRecompile = ManagedTypeDefinition->GetDefinition();
+	
+	UE_LOGFMT(LogUnrealSharp, VeryVerbose, "Compiling type: {0}", *TypeToRecompile->GetName());
+	Compile(TypeToRecompile, ManagedTypeDefinition);
+	
+	FCSMetaDataUtils::ApplyMetaData(ManagedTypeDefinition->GetReflectionData()->MetaData, TypeToRecompile);
+	FCSMetaDataUtils::ApplyBaseMetaData(TypeToRecompile);
+}
+
+FString UCSManagedTypeCompiler::GetFieldName(TSharedPtr<const FCSTypeReferenceReflectionData>& ReflectionData) const
+{
+	return FCSMetaDataUtils::GetAdjustedFieldName(ReflectionData->FieldName);
+}
