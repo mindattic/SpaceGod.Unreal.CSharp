@@ -17,3 +17,5 @@ __pycache__/
 Builds/
 # Written by the cooker on every package.
 **/Build/Windows/FileOpenOrder/
+# UnrealSharp regenerates this runtime glue project on every editor build (US-T69)
+/CSharp/Script/*.RuntimeGlue/
