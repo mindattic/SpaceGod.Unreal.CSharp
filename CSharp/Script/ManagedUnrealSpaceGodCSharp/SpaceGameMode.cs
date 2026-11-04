@@ -202,6 +202,7 @@ public partial class ASpaceGameMode : AGameModeBase
         if (app != null) UnityBridge.Invoke(app, "OnApplicationQuit");
         Bootstrap.TearDown();
         CoopPeer.Stop(); // US-T39
+        MindAttic.Capture.Unity.CaptureUnity.Shutdown(); // US-T72: Unity's capture host stops on Application.quitting
         base.EndPlay(endPlayReason);
     }
 

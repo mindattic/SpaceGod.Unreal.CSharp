@@ -19,3 +19,6 @@ Builds/
 **/Build/Windows/FileOpenOrder/
 # UnrealSharp regenerates this runtime glue project on every editor build (US-T69)
 /CSharp/Script/*.RuntimeGlue/
+# US-T72: build output of the vendored MindAttic.Capture projects
+/Vendor/**/bin/
+/Vendor/**/obj/

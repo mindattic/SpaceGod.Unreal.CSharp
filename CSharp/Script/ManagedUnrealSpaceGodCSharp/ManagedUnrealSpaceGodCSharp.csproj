@@ -15,5 +15,13 @@
     <!-- US-T41: cross-track saves (the static-name fix and the post-load delegate wiring), shared with Bench/CSharp. -->
     <Compile Include="../../Core/SaveCompat/*.cs" LinkBase="SaveCompat" />
     <ProjectReference Include="../../Core/SpaceGod.Core/SpaceGod.Core.csproj" />
+    <!-- US-T72: MindAttic.Capture, vendored (Vendor/MindAttic.Capture): the engine and its Windows desktop host. The game
+         window is recorded as its rectangle on screen; UnityCompat/CaptureUnity.cs is the Unity package's CaptureUnity. -->
+    <ProjectReference Include="../../../Vendor/MindAttic.Capture/src/MindAttic.Capture.Windows/MindAttic.Capture.Windows.csproj" />
   </ItemGroup>
+  <!-- US-T72: -capture is honoured only in a build with MINDATTIC_CAPTURE, as in the Unity package. On by default
+       (still off at run time unless -capture is on the command line); dotnet build -p:SpaceGodCapture=false leaves it out. -->
+  <PropertyGroup Condition="'$(SpaceGodCapture)' != 'false'">
+    <DefineConstants>$(DefineConstants);MINDATTIC_CAPTURE</DefineConstants>
+  </PropertyGroup>
 </Project>

@@ -47,6 +47,8 @@ namespace Unity.SpaceGod
             MatchSettingsOrder(); // US-T70
             if (initialised) return;
             initialised = true;
+            // US-T72: the capture package's own BeforeSceneLoad boot (CaptureUnity's [RuntimeInitializeOnLoadMethod] in Unity).
+            MindAttic.Capture.Unity.CaptureUnity.Boot();
             // Unity.Shared's ProfilesBootstrap.Initialize (its Unity half does not compile outside Unity).
             Profiles.ApplyMutedOverride();
             if (!Profiles.IsConfigured) Profiles.UseDataPath(Application.persistentDataPath);

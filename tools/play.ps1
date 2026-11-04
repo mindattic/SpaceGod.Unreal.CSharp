@@ -83,13 +83,13 @@ if ($Mode -eq 'fidelity') {
 
 if ($Mode -eq 'demo') {
   # -Mode demo (either track: US-T40 C#, US-T58 C++): Unity.SpaceGod's -demo SceneTour (CaptureRunner) end to end in a
-  # window, -capture saving every stop as <Track>/Saved/Screenshots/Tour/<stop>.png (or -CaptureDir); the game quits
-  # when the tour ends.
+  # window, -capturedir= saving every stop as <Track>/Saved/Screenshots/Tour/<stop>.png (or -CaptureDir); the game quits
+  # when the tour ends. Not -capture: since US-T72 that is MindAttic.Capture's own flag (a bare -capture films the session).
   $editor = Join-Path $engine 'Engine\Binaries\Win64\UnrealEditor.exe'
   if (-not $CaptureDir) { $CaptureDir = Join-Path $project.DirectoryName 'Saved\Screenshots\Tour' }
   $t0 = Get-Date
   $p = Start-Process -FilePath $editor -PassThru -Wait -ArgumentList @("`"$($project.FullName)`"", '/Engine/Maps/Entry', '-game',
-    '-windowed', '-ResX=1600', '-ResY=900', '-nosound', '-unattended', '-log', '-demo', '-capture', "`"-capturedir=$CaptureDir`"")
+    '-windowed', '-ResX=1600', '-ResY=900', '-nosound', '-unattended', '-log', '-demo', "`"-capturedir=$CaptureDir`"")
   $shots = @(Get-ChildItem -LiteralPath $CaptureDir -Filter '*.png' -ErrorAction SilentlyContinue | Where-Object LastWriteTime -ge $t0)
   $shots | ForEach-Object FullName
   "demo ($Track): $($shots.Count) tour stops captured"
