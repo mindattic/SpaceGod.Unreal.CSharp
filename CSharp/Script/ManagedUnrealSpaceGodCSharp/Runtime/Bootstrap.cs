@@ -24,9 +24,27 @@ namespace Unity.SpaceGod
 
         static bool initialised, viewerEnsured;
 
+        static bool settingsOrdered;
+
+        /// <summary>
+        /// US-T70: the settings menu lists each page in the order its settings were declared, which is the order their classes
+        /// were first initialised. In Unity the URP post-processing settings live in an assembly of their own
+        /// (Unity.SpaceGod.Rendering.Urp) that declares them before the game's own, so the original's Render pipeline page
+        /// reads URP's rows, then MSAA, then the pipeline and HDRP's; this port compiles them all into one assembly, where
+        /// they came last. Their class is initialised first here, before anything touches a setting, so the page is the
+        /// original's. Called first thing by every host (the game mode, a co-op client's link, the headless tools).
+        /// </summary>
+        public static void MatchSettingsOrder()
+        {
+            if (settingsOrdered) return;
+            settingsOrdered = true;
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(Rendering.Urp.UrpPostProcessSettings).TypeHandle);
+        }
+
         /// <summary>Unity's SubsystemRegistration / BeforeSceneLoad hooks: the profile store and the CLI mute.</summary>
         public static void InitialiseOnce()
         {
+            MatchSettingsOrder(); // US-T70
             if (initialised) return;
             initialised = true;
             // Unity.Shared's ProfilesBootstrap.Initialize (its Unity half does not compile outside Unity).

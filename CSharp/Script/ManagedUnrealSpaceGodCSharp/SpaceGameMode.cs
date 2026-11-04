@@ -40,6 +40,7 @@ public partial class ASpaceGameMode : AGameModeBase
     public override void BeginPlay()
     {
         base.BeginPlay();
+        Bootstrap.MatchSettingsOrder(); // US-T70: the settings pages in the original's order, before anything reads a setting
         // US-T67: co-op from the command line in every build. A Shipping game ignores a map URL on its command line
         // (UGameInstance::StartGameInstance: no "?listen", no "<host ip>") and has no console for "open <host ip>", so
         // -CoopHost reopens this project's one map (GameDefaultMap) as a listen server, as the URL's "?listen" does, and

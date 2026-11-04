@@ -149,6 +149,7 @@ namespace Unity.SpaceGod.Coop
 
         void StartApp()
         {
+            Bootstrap.MatchSettingsOrder(); // US-T70: the settings pages in the original's order (a client has no game mode)
             // A client's autosaves are of the host's world: a profile of their own, never the player's single-player saves.
             var root = System.IO.Path.Combine(SystemLibrary.ProjectSavedDirectory, CoopSmoke.Active ? "SmokeProfiles" : "SpaceGod", "CoopClient");
             System.IO.Directory.CreateDirectory(root);
