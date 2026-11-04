@@ -22,7 +22,7 @@ namespace Unity.SpaceGod
         /// <summary>Raised when an app is made or torn down (the host wires its camera and input to it).</summary>
         public static event Action<UnitySpaceApp> AppChanged;
 
-        static bool initialised, viewerEnsured;
+        static bool initialised, viewerEnsured, captureBegun;
 
         static bool settingsOrdered;
 
@@ -72,6 +72,14 @@ namespace Unity.SpaceGod
                     UnityBridge.Invoke(viewer, "Awake");
                     UnityBridge.Invoke(viewer, "Start");
                 }
+            }
+            // US-T72: the capture events' AfterSceneLoad hook (the shipped capture.json into the options), then the capture
+            // host's first frame (Unity's CaptureRunner.Start), which starts the engine; both no-ops without -capture.
+            if (!captureBegun)
+            {
+                captureBegun = true;
+                CaptureEvents.ApplyDefaults();
+                MindAttic.Capture.Unity.CaptureUnity.Begin();
             }
             // The main menu is a scene of its own, and the app is not made in it: the menu loads the game scene
             // when the player starts. A run for the tour, a capture or -continue goes straight there.

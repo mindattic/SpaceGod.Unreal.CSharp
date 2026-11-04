@@ -153,6 +153,7 @@ namespace Unity.SpaceGod
             {
                 var h = Saves.Save(slot, CaptureSave(), label ?? SlotName(slot));
                 ShowToast("Saved to " + SlotName(slot) + "  (" + DescribeSave(h) + ")");
+                CaptureEvents.GameSaved(SlotName(slot)); // US-T72
                 return true;
             }
             catch (Exception e)
@@ -189,6 +190,7 @@ namespace Unity.SpaceGod
             CoopLoadingHere(() => ApplyLoaded(data)); // US-T43: ApplyLoaded(data); the loaded helm is everyone's in co-op
             ShowSaves = false;
             ShowToast("Loaded " + SlotName(slot) + "  (" + DescribeSave(header) + ")");
+            CaptureEvents.GameLoaded(SlotName(slot)); // US-T72
             return true;
         }
 

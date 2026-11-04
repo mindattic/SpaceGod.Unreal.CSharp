@@ -1,0 +1,11 @@
+{
+  "replay": { "armed": true, "seconds": 30 },
+  "rules": [
+    { "on": "player-ship-destroyed", "action": "replay", "before": "20s", "after": "5s", "tag": "ship-lost", "cooldown": "10s" },
+    { "on": "battle-won", "action": "replay", "before": "25s", "after": "3s", "tag": "victory", "cooldown": "10s" },
+    { "on": "battle-lost", "action": "replay", "before": "25s", "after": "3s", "tag": "defeat", "cooldown": "10s" },
+    { "on": "system-arrival", "action": "screenshot", "tag": "arrival", "cooldown": "5s" },
+    { "on": "star-discovered", "action": "screenshot", "tag": "discovery", "cooldown": "5s" },
+    { "on": "*", "action": "marker" }
+  ]
+}

@@ -8,7 +8,10 @@ param(
   [string]$EngineVersion = '5.8',
   # -Mode coop-smoke only (US-T64): run a packaged game's exe (tools/package.ps1's folder, e.g. Builds/CSharp/Windows, Development or
   # Shipping) instead of the editor binaries.
-  [string]$PackageDir = ''
+  [string]$PackageDir = '',
+  # -Mode coop-smoke only (US-T72, docs/CAPTURE.md): the host also runs with -capture video, windowed (a window to record), its game
+  # log mirrored to a file (-SpaceGodLog=; Shipping logs nothing else), and the [capture] event lines it raised are listed.
+  [switch]$CaptureHost
 )
 
 <#
@@ -150,6 +153,7 @@ if ($Mode -eq 'coop-smoke') {
   $clientLog = Join-Path $logs "CoopSmokeClient-$run.log"
   $hostCoopLog = Join-Path $logs "CoopSmokeHost-$run.coop.log"
   $clientCoopLog = Join-Path $logs "CoopSmokeClient-$run.coop.log"
+  $hostGameLog = Join-Path $logs "CoopSmokeHost-$run.game.log"
   # A free UDP port (Unreal's IpNetDriver): one no socket holds now, from a range away from the default 7777.
   $port = $null
   foreach ($candidate in (Get-Random -InputObject (17800..18799) -Count 50)) {
@@ -170,7 +174,9 @@ if ($Mode -eq 'coop-smoke') {
   # US-T64: a package is told to host and join with -CoopHost / -CoopJoin=<address> (a Shipping game ignores the map URL).
   $hostUrl = if ($PackageDir) { @('-CoopHost') } else { @('/Engine/Maps/Entry?listen') }
   $clientUrl = if ($PackageDir) { @("-CoopJoin=127.0.0.1:$port") } else { @("127.0.0.1:$port") }
-  $hostArgs = $projectArg + $hostUrl + $common + $race.host + @("-port=$port", '-SpaceGodCoopSmoke=host', "`"-abslog=$hostLog`"",
+  # US-T72: -CaptureHost records the host's window, so it renders (960x540, windowed) instead of running -nullrhi.
+  $hostCommon = if ($CaptureHost) { @($common | Where-Object { $_ -ne '-nullrhi' }) + @('-windowed', '-ResX=960', '-ResY=540', '-capture', 'video', "`"-SpaceGodLog=$hostGameLog`"") } else { $common }
+  $hostArgs = $projectArg + $hostUrl + $hostCommon + $race.host + @("-port=$port", '-SpaceGodCoopSmoke=host', "`"-abslog=$hostLog`"",
     "`"-SpaceGodCoopLog=$hostCoopLog`"")
   # Not -WindowStyle (ShellExecute): CreateProcess, so the instances inherit the PATH with the private .NET SDK on it.
   $hostP = Start-Process -FilePath $cmd -PassThru -NoNewWindow -ArgumentList $hostArgs -RedirectStandardOutput "$hostLog.out"
@@ -240,6 +246,12 @@ if ($Mode -eq 'coop-smoke') {
   }
   "co-op smoke: syncs: $($syncs -join '; ')"
   foreach ($k in $checks.Keys) { "co-op smoke: $($k): $($checks[$k])" }
+  if ($CaptureHost) {
+    # US-T72: what the host raised for MindAttic.Capture (docs/CAPTURE.md section 3), by event, from its mirrored game log.
+    $events = if (Test-Path -LiteralPath $hostGameLog) { @(Select-String -LiteralPath $hostGameLog -Pattern '\[capture\] event (\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }) } else { @() }
+    "co-op smoke: capture events on the host: $($events.Count) ($(($events | Group-Object | Sort-Object Name | ForEach-Object { "$($_.Name) x$($_.Count)" }) -join ', '))"
+    "co-op smoke: host game log $hostGameLog"
+  }
   $result = if (@($checks.Values | Where-Object { -not $_ }).Count -gt 0) { 1 } else { 0 }
   }
   finally {

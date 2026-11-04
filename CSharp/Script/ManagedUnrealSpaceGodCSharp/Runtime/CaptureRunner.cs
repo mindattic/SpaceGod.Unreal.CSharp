@@ -34,8 +34,8 @@ namespace Unity.SpaceGod
         {
             var app = GetComponent<UnitySpaceApp>();
             var toFolder = Bootstrap.CommandLineValue("-capturedir") != null;
-            var capturing = toFolder || (CaptureUnity.Args != null && CaptureUnity.Args.Any);
-            if (capturing && !toFolder)
+            var capturing = CaptureUnity.Args != null && CaptureUnity.Args.Any;
+            if (capturing)
             {
                 var wait = 0f;
                 while (!CaptureUnity.Engine.Enabled && wait < 15f)
@@ -52,7 +52,9 @@ namespace Unity.SpaceGod
             bool done = false, rebuilt = false;
             void OnRebuilt() => rebuilt = true;
             app.GalaxyRebuilt += OnRebuilt;
-            var tour = new Coroutine(RunTour(app, capturing ? (toFolder ? Shot : CaptureShot) : NoShot, () => done = true));
+            // docs/CAPTURE.md: each stop through MindAttic.Capture when it runs, and as Unreal's own shot into -capturedir= too.
+            Func<string, IEnumerator> stop = capturing && toFolder ? (n => Both(n)) : capturing ? CaptureShot : toFolder ? Shot : NoShot;
+            var tour = new Coroutine(RunTour(app, stop, () => done = true));
             while (!done && !rebuilt)
             {
                 tour.Step();
@@ -67,7 +69,8 @@ namespace Unity.SpaceGod
                 Debug.LogWarning("[Unity.SpaceGod] The galaxy was rebuilt mid-tour; the tour stops here.");
             }
 
-            if (capturing) Debug.Log("[Unity.SpaceGod] Tour captured to " + (toFolder ? ShotFolder : CaptureUnity.Engine.SessionFolder));
+            if (capturing) Debug.Log("[Unity.SpaceGod] Tour captured to " + CaptureUnity.Engine.SessionFolder);
+            if (toFolder) Debug.Log("[Unity.SpaceGod] Tour shots in " + ShotFolder);
             Application.Quit();
         }
 
@@ -80,6 +83,12 @@ namespace Unity.SpaceGod
         static IEnumerator NoShot(string name)
         {
             yield break;
+        }
+
+        static IEnumerator Both(string name)
+        {
+            yield return CaptureShot(name);
+            yield return Shot(name);
         }
 
         /// <summary>Unity's Shot: a MindAttic.Capture screenshot tagged with the stop's name (US-T72).</summary>

@@ -471,6 +471,11 @@ namespace UnityEngine
         public static bool isEditor => false;
         public static string version => "1.0";
 
+        /// <summary>Unity's StreamingAssets (files shipped loose beside the game): here Content/Capture, which DefaultGame.ini
+        /// stages as non-UFS files, so a packaged game reads them from disk as Unity's player does (US-T72: the shipped
+        /// SpaceGod.capture.json).</summary>
+        public static string streamingAssetsPath => System.IO.Path.Combine(UnrealSharp.Engine.SystemLibrary.ProjectContentDirectory, "Capture");
+
         /// <summary>The frame cap (-1 none); the host applies it as t.MaxFPS (US-T26: EngineSettings.FrameRateCap).</summary>
         public static int targetFrameRate { get; set; } = -1;
 

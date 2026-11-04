@@ -482,6 +482,7 @@ namespace Unity.SpaceGod.Coop
             }
             Log("sync #" + syncId + " at frame " + syncFrame + " (" + syncReason + "): save " + save.Length / 1024 + " KB in " + syncChunks.Count + " chunks to " + sent + " player(s); captured in " + captured + " ms" +
                 (HostReloads ? ", host reloaded it in " + (reloaded - captured) + " ms" : "") + "; digest frame " + syncFrame + " = " + digest + " (" + LocalName + ", player 1)");
+            CaptureEvents.CoopResync(syncId, syncFrame, syncReason); // US-T72
         }
 
         void PumpChunks()
@@ -517,6 +518,7 @@ namespace Unity.SpaceGod.Coop
                 pending.Add("l " + r.Seat);
                 ForgetPilot(r.Seat);
                 Log(NameOf(r.Seat) + " (player " + (r.Seat + 1) + ") left");
+                CaptureEvents.CoopLeft(NameOf(r.Seat), r.Seat + 1); // US-T72
             }
         }
 
@@ -625,6 +627,7 @@ namespace Unity.SpaceGod.Coop
             pending.Add("j " + seat + " " + name);
             Players[seat] = new CoopPlayer { Seat = seat, Name = name };
             Log(name + " joined as player " + (seat + 1));
+            CaptureEvents.CoopJoined(name, seat + 1); // US-T72
             RequestSync(name + " joined");
         }
 
@@ -836,6 +839,7 @@ namespace Unity.SpaceGod.Coop
             hostLink?.Send("synced " + clientSyncId);
             Log("loaded sync #" + clientSyncId + " at frame " + clientSyncFrame + ": save " + save.Length / 1024 + " KB in " + watch.ElapsedMilliseconds + " ms, " +
                 queue.Count + " frames already waiting");
+            CaptureEvents.CoopResync(clientSyncId, clientSyncFrame, ""); // US-T72
             SendDigest(app, clientSyncFrame);
             return true;
         }

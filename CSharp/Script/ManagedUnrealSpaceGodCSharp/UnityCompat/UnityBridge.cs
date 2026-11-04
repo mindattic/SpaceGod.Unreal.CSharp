@@ -66,6 +66,40 @@ namespace UnityEngine
                 case 1: UnrealLogger.LogWarning(LogCategory, message); break;
                 default: UnrealLogger.Log(LogCategory, message); break;
             }
+            MirrorLog(message, severity);
+        }
+
+        static readonly object mirrorGate = new object();
+        static System.IO.StreamWriter? mirror;
+        static bool mirrorChecked;
+
+        /// <summary>US-T72: <c>-SpaceGodLog=&lt;file&gt;</c> also appends every Debug line to that file. A Shipping package
+        /// compiles Unreal's log out, so this is how a packaged game's own log (the Unity player log's lines, such as
+        /// docs/CAPTURE.md's <c>[capture] event</c> ones) can be read; tools/play.ps1 -Mode coop-smoke -CaptureHost uses it.</summary>
+        static void MirrorLog(string message, int severity)
+        {
+            lock (mirrorGate)
+            {
+                if (!mirrorChecked)
+                {
+                    mirrorChecked = true;
+                    foreach (var a in Environment.GetCommandLineArgs())
+                        if (a.StartsWith("-SpaceGodLog=", StringComparison.OrdinalIgnoreCase))
+                        {
+                            try
+                            {
+                                var path = a.Substring("-SpaceGodLog=".Length).Trim('"');
+                                var dir = System.IO.Path.GetDirectoryName(path);
+                                if (!string.IsNullOrEmpty(dir)) System.IO.Directory.CreateDirectory(dir);
+                                mirror = new System.IO.StreamWriter(path, true) { AutoFlush = true };
+                            }
+                            catch (Exception) { mirror = null; }
+                        }
+                }
+                if (mirror == null) return;
+                try { mirror.WriteLine((severity == 2 ? "Error: " : severity == 1 ? "Warning: " : "") + message); }
+                catch (Exception) { mirror = null; }
+            }
         }
 
         public static string PersistentDataPath

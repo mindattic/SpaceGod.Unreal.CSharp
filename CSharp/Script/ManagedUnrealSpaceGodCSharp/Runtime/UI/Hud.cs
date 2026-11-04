@@ -2831,6 +2831,7 @@ namespace Unity.SpaceGod.UI
             if (CoopSends("buy", K(market), (int)good, tradeCrates)) return; // US-T43: an entry in co-op
             var ship = app.World.PilotedShip;
             var outcome = app.Economy.BuyIntoHold(ship, market, good, tradeCrates, out int bought, out var stoppedBy);
+            if (bought > 0) CaptureEvents.Trade("buy", GoodInfo.Of(good).Name, bought, market.Name); // US-T72
             if (bought > 0)
                 app.ShowToast("Bought " + bought + " crate" + (bought == 1 ? "" : "s") + " of " + GoodInfo.Of(good).Name +
                     (bought < tradeCrates ? stoppedBy switch
@@ -2876,6 +2877,7 @@ namespace Unity.SpaceGod.UI
             if (CoopSends("sell", K(market), (int)good, tradeCrates)) return; // US-T43: an entry in co-op
             var ship = app.World.PilotedShip;
             var outcome = app.Economy.SellFromHold(ship, market, good, tradeCrates, out int sold);
+            if (sold > 0) CaptureEvents.Trade("sell", GoodInfo.Of(good).Name, sold, market.Name); // US-T72
             if (sold > 0)
                 app.ShowToast("Sold " + sold + " crate" + (sold == 1 ? "" : "s") + " of " + GoodInfo.Of(good).Name);
             else

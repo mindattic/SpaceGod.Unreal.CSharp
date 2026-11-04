@@ -68,7 +68,8 @@ namespace MindAttic.Capture.Unity
 
         /// <summary>
         /// Unity's BeforeSceneLoad boot, called from <c>Bootstrap.InitialiseOnce</c>: parses the flags and, when capture
-        /// is asked for, starts the engine on the game window. Runs once per process.
+        /// is asked for, builds the options. Game code may change them until <see cref="Begin"/> (Unity: until the first
+        /// frame), which is how CaptureEvents.ApplyDefaults puts the shipped capture.json in. Runs once per process.
         /// </summary>
         public static void Boot()
         {
@@ -103,6 +104,16 @@ namespace MindAttic.Capture.Unity
             }
             Args = parsed;
             Options = options;
+        }
+
+        /// <summary>
+        /// The Unity capture host's first frame (its Start): starts the engine on the game window with the options as game
+        /// code left them. Called from <c>Bootstrap.EnsureApp</c> after the AfterSceneLoad hooks; once per process.
+        /// </summary>
+        public static void Begin()
+        {
+            var options = Options;
+            if (options == null || startTask != null) return;
             // docs/CAPTURE.md section 5: the capture hotkeys are the game's own (InputState's Alt+F9/F10/F11), never the
             // capture.json map. So the engine is started directly, not through DesktopCapture.StartAsync, which would bind
             // that map system-wide (RegisterHotKey).

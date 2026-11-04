@@ -253,6 +253,7 @@ namespace Unity.SpaceGod
                 ShowToast("Nobody to hail: lock or select a ship of another polity first (F12 hails it)");
                 return;
             }
+            CaptureEvents.Hail(from?.Name, to.Name); // US-T72: on the peer whose player hailed, before co-op routing
             if (UI.GalaxyMapScreen.CoopSendsHail(this, from, to)) return; // US-T47: the hail at its frame on every peer, the envoy opened here
             ShowToast(statecraft.Hail(from, to, Clock.Jd));
             if (!Statecraft.Party(to)) return;
@@ -445,7 +446,11 @@ namespace Unity.SpaceGod
             SpaceCamera.PlaceFree(start, (float)(Math.Atan2(look.X, look.Z) * Mathf.Rad2Deg), (float)(-Math.Asin(look.Y) * Mathf.Rad2Deg));
             Select(Target.OfBody(earth));
             InitSaves();
+            CaptureEvents.Attach(this); // US-T72: the capture events' subscriptions and polling (docs/CAPTURE.md)
         }
+
+        /// <summary>The polled capture events, after every frame's update (US-T72, docs/CAPTURE.md section 3).</summary>
+        void LateUpdate() => CaptureEvents.Tick(this);
 
         /// <summary>Battle toasts from whichever system is being watched, in every system there is and any a new gate opens (U.SPC-T97).</summary>
         void SubscribeWorlds()
@@ -660,6 +665,7 @@ namespace Unity.SpaceGod
             float dt = Mathf.Min(Time.unscaledDeltaTime, 0.1f);
             bool overUi = IsPointerOverUi();
             Input.Poll(overUi, ModelViewer.CapturesInput);
+            CaptureEvents.Hotkeys(Input); // US-T72: Alt+F9/F10/F11 while capture runs, on this machine only
             // The galaxy map turns with its own drag: the camera behind it does not look about meanwhile.
             if ((ShowGalaxyMap || ShowHelp) && !ScreenCleared) Input.ReleaseLook();
             // The pause menu has the frame: nothing else moves, and the stick and trigger do nothing, until it closes.

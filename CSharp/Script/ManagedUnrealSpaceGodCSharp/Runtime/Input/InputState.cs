@@ -169,6 +169,13 @@ namespace Unity.SpaceGod.Input
         /// <summary>F5 saves to the quicksave slot, F8 loads it, F6 opens the save slots.</summary>
         public bool QuickSave, QuickLoad, ToggleSaves;
 
+        /// <summary>While capture runs (US-T72, docs/CAPTURE.md section 5): Alt+F9 a screenshot, Alt+F10 toggles an
+        /// on-demand recording, Alt+F11 saves the replay. Local to this machine: never sent to co-op peers, so they are
+        /// properties, which PilotFrame (it carries every public field) leaves out.</summary>
+        public bool CaptureScreenshot { get; private set; }
+        public bool CaptureToggleRecording { get; private set; }
+        public bool CaptureSaveReplay { get; private set; }
+
         Vector2 pressPosition;
         float lastClickTime = -10f;
         Vector2 lastClickPosition;
@@ -284,6 +291,15 @@ namespace Unity.SpaceGod.Input
             ManGun = kb.WasPressedThisFrame(Key.Slash);
             MoveToHost = kb.WasPressedThisFrame(Key.Backspace);
             TogglePicker = kb.WasPressedThisFrame(Key.F9);
+            // US-T72 (docs/CAPTURE.md section 5): while capture runs, Alt+F9 / Alt+F10 / Alt+F11 are its screenshot, toggle
+            // recording and save replay instead of the picker, fleet and clear screen. Without capture Alt changes nothing.
+            if (CaptureEvents.Running && (kb.IsPressed(Key.LeftAlt) || kb.IsPressed(Key.RightAlt)))
+            {
+                CaptureScreenshot = TogglePicker;
+                CaptureToggleRecording = ToggleFleet;
+                CaptureSaveReplay = ClearScreen;
+                TogglePicker = ToggleFleet = ClearScreen = false;
+            }
             bool shifted = kb.IsPressed(Key.LeftShift) || kb.IsPressed(Key.RightShift);
             TunePhasers = kb.WasPressedThisFrame(Key.Insert) && !shifted;
             ToggleBoarding = kb.WasPressedThisFrame(Key.B);
@@ -340,6 +356,9 @@ namespace Unity.SpaceGod.Input
             ToggleRollPatches = false;
             NumberKey = -1;
             HailPolity = false;
+            CaptureScreenshot = false;
+            CaptureToggleRecording = false;
+            CaptureSaveReplay = false;
         }
 
         static float Axis(IInputDevice kb, Key positive, Key negative) =>
