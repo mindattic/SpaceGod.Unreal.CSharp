@@ -39,9 +39,10 @@ Details in [Vendor/README.md](Vendor/README.md).
 ./run.ps1 -LauncherOnly    # only (re)create the Desktop shortcut
 ```
 
-`run.ps1` never prompts. The Desktop shortcut **SpaceGod – Unreal C#** opens `run.bat`, which deploys (only
-when something changed) and then starts the game, with no menu. `deploy.bat` asks 1) Deploy & Run or 2) Run (Run
-deploys first when nothing is published yet).
+`run.ps1` never prompts. The Desktop shortcut **SpaceGod – Unreal C#** opens `run.bat`, which asks 1) Deploy or
+2) Deploy & Run (both repackage only when something changed; arguments skip the menu). `deploy.bat` asks 1) Deploy &
+Run (always repackages) or 2) Run (Run deploys first when nothing is published yet). Every game these scripts start
+records through MindAttic.Capture (`-capture video hq`).
 
 ## Building and running from the checkout
 

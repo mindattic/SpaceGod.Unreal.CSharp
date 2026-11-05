@@ -46,5 +46,5 @@ if not exist "%EXE%" (
     echo   SpaceGod - Unreal C# is not deployed yet ^(%EXE% is missing^) - deploying first.
     goto deploy
 )
-start "" /d "%APP%" "%EXE%"
+start "" /d "%APP%" "%EXE%" -capture video hq
 exit /b 0

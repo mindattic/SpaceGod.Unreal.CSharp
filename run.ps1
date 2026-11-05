@@ -44,8 +44,10 @@ $title     = 'SpaceGod – Unreal C#'
 $out       = "C:\Apps\$name"
 $exeName   = 'Unreal.SpaceGod.CSharp.exe'          # tools\package.ps1's launcher name
 $buildDir  = Join-Path $repoDir 'Builds\CSharp\Windows'
-$shortcutBat = Join-Path $repoDir 'run.bat'   # the Desktop shortcut's target: deploy, then run (US-T71)
+$shortcutBat = Join-Path $repoDir 'run.bat'   # the Desktop shortcut's target: 1) Deploy or 2) Deploy & Run (US-T73)
 $marker    = Join-Path $out '.deploy-commit'
+# US-T74: every launch records (docs/CAPTURE.md); hq, as lossless video falls behind on this machine.
+$captureArgs = @('-capture', 'video', 'hq')
 
 # GetFolderPath, not $HOME\Desktop: OneDrive may have moved the Desktop folder.
 function Set-Shortcut([string]$exe) {
@@ -54,7 +56,7 @@ function Set-Shortcut([string]$exe) {
     $link.TargetPath       = $shortcutBat
     $link.WorkingDirectory = $repoDir
     if (Test-Path -LiteralPath $exe) { $link.IconLocation = "$exe,0" }
-    $link.Description      = "$title ($name): 1) Deploy & Run or 2) Run"
+    $link.Description      = "$title ($name): 1) Deploy or 2) Deploy & Run"
     $link.Save()
     Write-Host "    Shortcut -> $shortcut" -ForegroundColor Gray
 }
@@ -62,7 +64,7 @@ function Set-Shortcut([string]$exe) {
 function Start-Game {
     $exe = Join-Path $out $exeName
     Write-Host "  Launching $exe" -ForegroundColor Cyan
-    Start-Process -FilePath $exe -WorkingDirectory $out
+    Start-Process -FilePath $exe -WorkingDirectory $out -ArgumentList $captureArgs
 }
 
 Set-Shortcut (Join-Path $out $exeName)
