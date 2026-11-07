@@ -88,3 +88,7 @@ Unity.SpaceGod's own bindings, unchanged (H / F1 in game shows them all).
   C++ track now lives in SpaceGod.Unreal.Cpp).
 
 The game needs no level: it plays on the engine's empty `/Engine/Maps/Entry` and builds everything at runtime.
+
+## Headless
+
+The shared, off-by-default `--headless` mode (no window, no sound, one `MINDATTIC_HEADLESS_READY` log line) comes from the `MindAtticShared` plugin in `../Unreal.Shared`, enabled in the .uproject. Run `./tools/play-headless.ps1 -Wait` to start the game that way from the editor binaries. The game itself has no headless opt-in beyond the plugin (archived).

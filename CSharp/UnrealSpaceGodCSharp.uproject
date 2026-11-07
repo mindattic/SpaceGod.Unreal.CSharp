@@ -24,11 +24,16 @@
 			"Enabled": true
 		},
 		{
+			"Name": "MindAtticShared",
+			"Enabled": true
+		},
+		{
 			"Name": "ProceduralMeshComponent",
 			"Enabled": true
 		}
 	],
 	"AdditionalPluginDirectories": [
-		"../Shared/Plugins"
+		"../Shared/Plugins",
+		"../../Unreal.Shared/Plugins"
 	]
 }
